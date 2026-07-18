@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+
+{% block title %}SMK Flour Shop - Track Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 1.5rem auto;">
+
+    <!-- Home Link -->
+    <a href="{% url 'catalog' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--banana-leaf); font-weight: 600; margin-bottom: 1rem;">
+        <i class="fa-solid fa-house"></i>
+        <span x-show="lang === 'en' || lang === 'both'">Back to Shop</span>
+        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.85rem;' : ''">முகப்புக்குச் செல்ல</span>
+    </a>
+
+    <!-- Main Card -->
+    <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-md); margin-bottom: 1.5rem;">
+        
+        <!-- Header Banner -->
+        <div style="background-color: var(--dark-brown); color: white; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.2rem;">
+                    <span x-show="lang === 'en' || lang === 'both'">Track Order #{{ order.id }}</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.95rem;' : ''">ஆர்டர் நிலை #{{ order.id }}</span>
+                </h2>
+                <p style="font-size: 0.75rem; opacity: 0.85;">
+                    <span x-show="lang === 'en' || lang === 'both'">Placed on {{ order.created_at|date:"d M Y, h:i A" }}</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">{{ order.created_at|date:"d M Y, h:i A" }} அன்று பதிவு செய்யப்பட்டது</span>
+                </p>
+            </div>
+            <div style="background-color: var(--terracotta); padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;">
+                {{ order.get_status_display }}
+            </div>
+        </div>
+
+        <div style="padding: 1.5rem;">
+            
+            <!-- Dynamic Polling Timeline & Payment Section -->
+            {% include 'shop/partials/order_status_timeline.html' %}
+
+            <!-- Order Details -->
+            <div style="background-color: var(--rice-white); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.6rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem;">
+                    <span x-show="lang === 'en' || lang === 'both'">Customer & Delivery Info</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; font-weight: 500;' : ''">வாடிக்கையாளர் & விநியோக விபரம்</span>
+                </h3>
+                <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.85rem;">
+                    <div>
+                        <strong>
+                            <span x-show="lang === 'en' || lang === 'both'">Customer Name:</span>
+                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">பெயர்:</span>
+                        </strong> 
+                        {{ order.customer.name }}
+                    </div>
+                    <div>
+                        <strong>
+                            <span x-show="lang === 'en' || lang === 'both'">Phone Number:</span>
+                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">கைபேசி எண்:</span>
+                        </strong> 
+                        {{ order.customer.phone_number }}
+                    </div>
+                    <div>
+                        <strong>
+                            <span x-show="lang === 'en' || lang === 'both'">Option Selected:</span>
+                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">பெறும் முறை:</span>
+                        </strong> 
+                        <span x-show="lang === 'en' || lang === 'both'">{{ order.get_order_type_display }}</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">
+                            {% if order.order_type == 'pickup' %}கடையில் வாங்குதல்{% else %}வீட்டுக்கு டெலிவரி{% endif %}
+                        </span>
+                    </div>
+                    
+                    {% if order.order_type == 'delivery' and order.address %}
+                        <div style="margin-top: 0.4rem; border-top: 1px dashed var(--border-color); padding-top: 0.4rem;">
+                            <strong>
+                                <span x-show="lang === 'en' || lang === 'both'">Delivery Address:</span>
+                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">டெலிவரி முகவரி:</span>
+                            </strong>
+                            <p style="margin-top: 0.2rem; color: #555;">{{ order.address.address_text }}</p>
+                            {% if order.address.landmark %}
+                                <p style="font-size: 0.75rem; color: #887B75; margin-top: 0.1rem;">
+                                    <strong>
+                                        <span x-show="lang === 'en' || lang === 'both'">Landmark:</span>
+                                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">அடையாளம்:</span>
+                                    </strong> 
+                                    {{ order.address.landmark }}
+                                </p>
+                            {% endif %}
+                            
+                            {% if order.address.latitude and order.address.longitude %}
+                                <a href="https://www.google.com/maps/search/?api=1&query={{ order.address.latitude }},{{ order.address.longitude }}" 
+                                   target="_blank" 
+                                   style="display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.4rem; font-size: 0.75rem; font-weight: 600; color: var(--banana-leaf); text-decoration: none;">
+                                    <i class="fa-solid fa-map-pin"></i>
+                                    <span x-show="lang === 'en' || lang === 'both'">View on Google Maps</span>
+                                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">கூகுள் மேப்பில் பார்க்க</span>
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% elif order.order_type == 'pickup' %}
+                        <div style="margin-top: 0.4rem; border-top: 1px dashed var(--border-color); padding-top: 0.4rem;">
+                            <strong>
+                                <span x-show="lang === 'en' || lang === 'both'">Shop Address to Pick up:</span>
+                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">கடையின் முகவரி:</span>
+                            </strong>
+                            <p style="margin-top: 0.2rem; color: #555;">Near Muthusamy Hospital, Selvapuram, Coimbatore, Tamil Nadu 641024</p>
+                            <a href="https://www.google.com/maps/search/?api=1&query=10.9790,76.9423" 
+                               target="_blank" 
+                               style="display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.4rem; font-size: 0.75rem; font-weight: 600; color: var(--banana-leaf); text-decoration: none;">
+                                <i class="fa-solid fa-map-pin"></i>
+                                <span x-show="lang === 'en' || lang === 'both'">Get Shop Directions</span>
+                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">கடைக்கு வழி அறிய</span>
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Items summary -->
+            <div style="border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="background-color: var(--rice-cream); color: var(--dark-brown); font-weight: 700; border-bottom: 1px solid var(--border-color);">
+                            <th style="padding: 0.8rem 1rem;">
+                                <span x-show="lang === 'en' || lang === 'both'">Item</span>
+                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">பொருள்</span>
+                            </th>
+                            <th style="padding: 0.8rem 1rem; text-align: center;">
+                                <span x-show="lang === 'en' || lang === 'both'">Qty</span>
+                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">அளவு</span>
+                            </th>
+                            <th style="padding: 0.8rem 1rem; text-align: right;">
+                                <span x-show="lang === 'en' || lang === 'both'">Price</span>
+                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">விலை</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 0.8rem 1rem;">
+                                    <div style="font-weight: 700;">
+                                        <span x-show="lang === 'en' || lang === 'both'">{{ item.product.name_en }}</span>
+                                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" style="font-size: 0.8rem;">{{ item.product.name_ta }}</span>
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: #887B75;">{{ item.price_slab.quantity_value }} {{ item.price_slab.get_quantity_unit_display }}</div>
+                                </td>
+                                <td style="padding: 0.8rem 1rem; text-align: center; font-weight: 600;">{{ item.quantity }}</td>
+                                <td style="padding: 0.8rem 1rem; text-align: right; font-weight: 600;">₹{{ item.subtotal|floatformat:2 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        {% if order.order_type == 'delivery' %}
+                            <tr style="background-color: var(--rice-white); font-size: 0.85rem; color: var(--text-secondary);">
+                                <td colspan="2" style="padding: 0.5rem 1rem;">
+                                    <span x-show="lang === 'en' || lang === 'both'">Items Subtotal</span>
+                                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">பொருட்களின் விலை</span>
+                                </td>
+                                <td style="padding: 0.5rem 1rem; text-align: right;">₹{{ order.items_total|floatformat:2 }}</td>
+                            </tr>
+                            <tr style="background-color: var(--rice-white); font-size: 0.85rem; color: var(--text-secondary);">
+                                <td colspan="2" style="padding: 0.5rem 1rem;">
+                                    <span x-show="lang === 'en' || lang === 'both'">Delivery Fee (₹10/km)</span>
+                                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">டெலிவரி கட்டணம்</span>
+                                    {% if order.distance_km %}<span style="font-size: 0.75rem;">({{ order.distance_km }} km)</span>{% endif %}
+                                </td>
+                                <td style="padding: 0.5rem 1rem; text-align: right; color: var(--success-color);">₹{{ order.delivery_fee|floatformat:2 }}</td>
+                            </tr>
+                        {% endif %}
+                        <tr style="background-color: var(--rice-white); font-weight: 800; font-size: 0.95rem; border-top: 1px solid var(--border-color);">
+                            <td colspan="2" style="padding: 0.8rem 1rem;">
+                                <span x-show="lang === 'en' || lang === 'both'">Total Payable</span>
+                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">மொத்த தொகை</span>
+                            </td>
+                            <td style="padding: 0.8rem 1rem; text-align: right; color: var(--terracotta);">₹{{ order.total_amount|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Payment Details Summary -->
+            <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); padding: 0.8rem 1rem; border-radius: 12px; font-size: 0.8rem;">
+                <div>
+                    <strong>
+                        <span x-show="lang === 'en' || lang === 'both'">Payment Method:</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">கட்டண முறை:</span>
+                    </strong> 
+                    <span x-show="lang === 'en' || lang === 'both'">{{ payment.get_method_display }}</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">
+                        {% if payment.method == 'online' %}ஆன்லைன் கட்டணம் (Razorpay){% else %}நேரடி பணம் (COD){% endif %}
+                    </span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                    <strong>
+                        <span x-show="lang === 'en' || lang === 'both'">Status:</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">நிலை:</span>
+                    </strong>
+                    <span style="font-weight: 700; text-transform: uppercase;
+                        {% if payment.status == 'completed' %}color: var(--banana-leaf);
+                        {% elif payment.status == 'failed' %}color: #C0392B;
+                        {% else %}color: var(--turmeric);
+                        {% endif %}">
+                        <span x-show="lang === 'en' || lang === 'both'">{{ payment.get_status_display }}</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">
+                            {% if payment.status == 'completed' %}முடிந்தது{% elif payment.status == 'failed' %}தோல்வி{% else %}நிலுவையில் உள்ளது{% endif %}
+                        </span>
+                    </span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if payment and payment.method == 'online' and payment.status == 'pending' %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    window.bindPayButton = function() {
+        var payButton = document.getElementById('pay-button');
+        if (!payButton) return;
+        
+        payButton.onclick = function(e){
+            e.preventDefault();
+            
+            var options = {
+                "key": "{{ RAZORPAY_KEY_ID }}",
+                "amount": "{{ total_amount_paise }}",
+                "currency": "INR",
+                "name": "SMK Flour Shop",
+                "description": "Order #{{ order.id }} Payment",
+                "order_id": "{{ payment.gateway_txn_id }}",
+                "handler": function (response){
+                    fetch("{% url 'verify_payment' %}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        body: new URLSearchParams({
+                            "razorpay_payment_id": response.razorpay_payment_id,
+                            "razorpay_order_id": response.razorpay_order_id,
+                            "razorpay_signature": response.razorpay_signature,
+                            "order_id": "{{ order.id }}"
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            window.location.reload();
+                        } else {
+                            alert("Payment verification failed: " + data.message);
+                        }
+                    })
+                    .catch(err => {
+                        alert("Error during payment signature verification.");
+                    });
+                },
+                "prefill": {
+                    "name": "{{ order.customer.name }}",
+                    "contact": "{{ order.customer.phone_number }}"
+                },
+                "theme": {
+                    "color": "#D85C38"
+                }
+            };
+            
+            // Sandbox bypass for testing when keys are placeholder values
+            if (options.key === 'rzp_test_placeholder' || !options.order_id || options.order_id.startsWith('ERROR_INIT_') || options.order_id.startsWith('MOCK_TXN_')) {
+                alert("SANDBOX MODE: Simulating payment success for testing.");
+                fetch("{% url 'verify_payment' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: new URLSearchParams({
+                        "razorpay_payment_id": "pay_mock_" + Math.random().toString(36).substring(2, 9),
+                        "razorpay_order_id": "order_mock_" + Math.random().toString(36).substring(2, 9),
+                        "razorpay_signature": "sig_mock_" + Math.random().toString(36).substring(2, 9),
+                        "order_id": "{{ order.id }}"
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    window.location.reload();
+                });
+                return;
+            }
+
+            var rzp1 = new Razorpay(options);
+            rzp1.on('payment.failed', function (response){
+                alert("Payment failed: " + response.error.description);
+            });
+            rzp1.open();
+        }
+    };
+    
+    // Initial binding
+    window.bindPayButton();
+</script>
+{% endif %}
+{% endblock %}

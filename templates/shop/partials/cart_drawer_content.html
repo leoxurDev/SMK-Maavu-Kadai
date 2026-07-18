@@ -1,0 +1,82 @@
+{% if cart_items %}
+    {% if limit_exceeded %}
+        <div style="background-color: rgba(255, 149, 0, 0.1); border-left: 4px solid var(--warning-color); color: var(--warning-color); padding: 0.8rem; margin-bottom: 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;" id="cart-limit-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div>
+                <span x-show="lang === 'en' || lang === 'both'">Order limit exceeded! Max 10 units allowed.</span>
+                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'display: block; font-size: 0.7rem; margin-top: 1px;' : ''">ஆர்டர் வரம்பு மீறியுள்ளது! அதிகபட்சம் 10 அலகுகள் மட்டுமே.</span>
+            </div>
+        </div>
+    {% endif %}
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for item in cart_items %}
+            <div class="cart-item">
+                <div class="cart-item-info">
+                    <div class="cart-item-name">{{ item.product.name_en }}</div>
+                    <div class="cart-item-name tamil-text" style="font-size: 0.8rem; color: var(--banana-leaf);">{{ item.product.name_ta }}</div>
+                    <div class="cart-item-slab">Size: {{ item.slab.quantity_value }} {{ item.slab.get_quantity_unit_display }}</div>
+                    <div class="cart-item-price">₹{{ item.subtotal|floatformat:2 }}</div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 0.5rem;">
+                    <!-- Remove Button -->
+                    <button class="remove-btn" 
+                            hx-post="{% url 'remove_from_cart' %}" 
+                            hx-vals='{"slab_id": "{{ item.slab.id }}"}'
+                            hx-swap="none"
+                            title="Remove item">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                    
+                    <!-- Quantity Editor -->
+                    <div class="qty-editor">
+                        <button class="qty-btn" 
+                                hx-post="{% url 'update_cart_quantity' %}" 
+                                hx-vals='{"slab_id": "{{ item.slab.id }}", "action": "decrement"}'
+                                hx-swap="none">
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
+                        <span class="qty-val">{{ item.quantity }}</span>
+                        <button class="qty-btn" 
+                                hx-post="{% url 'update_cart_quantity' %}" 
+                                hx-vals='{"slab_id": "{{ item.slab.id }}", "action": "increment"}'
+                                hx-swap="none">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Sticky Drawer Footer computations -->
+    <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <div class="cart-summary-row">
+            <span>Items Total</span>
+            <span>₹{{ cart_total|floatformat:2 }}</span>
+        </div>
+        <div class="cart-summary-row">
+            <span>Delivery Fee</span>
+            <span style="color: var(--banana-leaf); font-weight: 600;">Calculated at checkout</span>
+        </div>
+        <div class="cart-summary-total">
+            <span>Total Payable</span>
+            <span>₹{{ cart_total|floatformat:2 }}</span>
+        </div>
+        
+        <!-- Redirect to Checkout checkout button -->
+        <a href="{% url 'checkout' %}" class="btn-primary" style="text-decoration: none; width: 100%;">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Proceed to Checkout</span>
+        </a>
+    </div>
+{% else %}
+    <div class="cart-empty">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <p>உங்களது கூடை காலியாக உள்ளது</p>
+        <p style="font-size: 0.85rem; margin-top: 0.2rem;">Your cart is empty.</p>
+        <button class="btn-primary" style="margin-top: 1.5rem;" @click="cartOpen = false">
+            Start Ordering
+        </button>
+    </div>
+{% endif %}

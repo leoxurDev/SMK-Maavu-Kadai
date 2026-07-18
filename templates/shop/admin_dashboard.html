@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMK Flour Shop - Operations Dashboard</title>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/css/index.css">
+    
+    <!-- JS dependencies -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <style>
+        .dash-container {
+            max-width: 1000px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+        }
+        .dash-tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+        }
+        .dash-tab-btn {
+            background: none;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: #665C58;
+            border-radius: 8px;
+            white-space: nowrap;
+            transition: var(--transition-smooth);
+        }
+        .dash-tab-btn:hover {
+            background-color: var(--rice-cream);
+            color: var(--dark-brown);
+        }
+        .dash-tab-btn.active {
+            background-color: var(--terracotta);
+            color: white;
+        }
+        .metric-card {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-sm);
+        }
+        .metric-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #887B75;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        .metric-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--dark-brown);
+        }
+        .table-container {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+        .dash-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        .dash-table th {
+            background-color: var(--rice-cream);
+            color: var(--dark-brown);
+            font-weight: 700;
+            padding: 0.8rem 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .dash-table td {
+            padding: 0.8rem 1rem;
+            vertical-align: middle;
+        }
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            align-items: flex-end;
+        }
+        .form-group-dash {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .form-group-dash label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--dark-brown);
+        }
+        .form-group-dash select, .form-group-dash input {
+            height: 38px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0 0.6rem;
+            outline: none;
+            font-family: var(--font-primary);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body x-data="{ currentTab: 'orders', lang: 'both', theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') }" :class="theme" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+    <!-- Header Section -->
+    <header>
+        <div class="header-container" style="max-width: 1000px;">
+            <div class="logo-group">
+                <i class="fa-solid fa-chart-pie logo-icon"></i>
+                <div class="brand-text">
+                    <h1>SMK Management Panel</h1>
+                    <span>Operations & Reconciliation Dashboard</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <!-- Light / Dark theme toggle -->
+                <button class="theme-toggle-btn" @click="theme = (theme === 'light' ? 'dark' : 'light'); localStorage.setItem('theme', theme)" aria-label="Toggle Theme">
+                    <i class="fa-solid" :class="theme === 'light' ? 'fa-moon' : 'fa-sun'"></i>
+                </button>
+                
+                <a href="/admin/" class="category-tab" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                    <i class="fa-solid fa-cog"></i> Django Admin
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="dash-container">
+        
+        <!-- Tab Navigation Buttons -->
+        <div class="dash-tabs">
+            <button class="dash-tab-btn" :class="currentTab === 'orders' ? 'active' : ''" @click="currentTab = 'orders'">
+                <i class="fa-solid fa-clipboard-list"></i> Live Orders ({% if orders %}{{ orders.count }}{% else %}0{% endif %})
+            </button>
+            <button class="dash-tab-btn" :class="currentTab === 'reconciliation' ? 'active' : ''" @click="currentTab = 'reconciliation'">
+                <i class="fa-solid fa-money-bill-wave"></i> Payment Reconciliation
+            </button>
+            <button class="dash-tab-btn" :class="currentTab === 'analytics' ? 'active' : ''" @click="currentTab = 'analytics'">
+                <i class="fa-solid fa-chart-line"></i> Analytics Summary
+            </button>
+            <button class="dash-tab-btn" :class="currentTab === 'deliveries' ? 'active' : ''" @click="currentTab = 'deliveries'">
+                <i class="fa-solid fa-truck-ramp-box"></i> Active Deliveries ({{ active_deliveries.count }})
+            </button>
+        </div>
+
+        <!-- TAB 1: LIVE ORDERS OPERATIONS -->
+        <div x-show="currentTab === 'orders'">
+            
+            <!-- Filters -->
+            <form method="GET" action="." class="filter-form">
+                <div class="form-group-dash">
+                    <label>Order Status</label>
+                    <select name="status">
+                        <option value="">All Statuses</option>
+                        {% for code, label in status_choices %}
+                            <option value="{{ code }}" {% if request.GET.status == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group-dash">
+                    <label>Order Type</label>
+                    <select name="order_type">
+                        <option value="">All Types</option>
+                        <option value="pickup" {% if request.GET.order_type == 'pickup' %}selected{% endif %}>Store Pickup</option>
+                        <option value="delivery" {% if request.GET.order_type == 'delivery' %}selected{% endif %}>Home Delivery</option>
+                    </select>
+                </div>
+
+                <div class="form-group-dash" style="flex-grow: 1;">
+                    <label>Search Order</label>
+                    <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Search ID, Name, Phone...">
+                </div>
+
+                <div style="display: flex; gap: 0.4rem;">
+                    <button type="submit" class="btn-primary" style="height: 38px; width: auto; background-color: var(--banana-leaf); padding: 0 1rem; border-radius: 6px;">
+                        <i class="fa-solid fa-filter"></i> Apply
+                    </button>
+                    <a href="." class="category-tab" style="height: 38px; display: inline-flex; align-items: center; border-radius: 6px; padding: 0 1rem; text-decoration: none;">
+                        Reset
+                    </a>
+                </div>
+            </form>
+
+            <!-- Table of orders -->
+            <div class="table-container">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Type</th>
+                            <th>Items purchased</th>
+                            <th>Total Amount</th>
+                            <th>Payment</th>
+                            <th>Actions (Change Status)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody" 
+                           hx-get="{% url 'admin_dashboard' %}" 
+                           hx-trigger="newOrderReceived from:body" 
+                           hx-target="this" 
+                           hx-select="#orders-tbody tr" 
+                           hx-include=".filter-form">
+                        {% if orders %}
+                            {% for order in orders %}
+                                {% include 'shop/partials/admin_order_row.html' %}
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: #887B75; padding: 2rem;">No orders registered matching filters.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: PAYMENT RECONCILIATION -->
+        <div x-show="currentTab === 'reconciliation'" style="display: none;">
+            
+            <div class="table-container">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer Contact</th>
+                            <th>Payment Method</th>
+                            <th>Gateway Order ID / Ref</th>
+                            <th>Ledger Amount</th>
+                            <th>Payment Status</th>
+                            <th>Paid Date & Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if payments %}
+                            {% for p in payments %}
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ p.order.id }}</td>
+                                    <td style="padding: 0.8rem 1rem;">
+                                        <div style="font-weight: 600;">{{ p.order.customer.name }}</div>
+                                        <div style="font-size: 0.75rem; color: #887B75;">{{ p.order.customer.phone_number }}</div>
+                                    </td>
+                                    <td style="padding: 0.8rem 1rem;">{{ p.get_method_display }}</td>
+                                    <td style="padding: 0.8rem 1rem; font-family: monospace; font-size: 0.8rem; color: #555;">{{ p.gateway_txn_id|default:"N/A (COD)" }}</td>
+                                    <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">₹{{ p.amount }}</td>
+                                    <td style="padding: 0.8rem 1rem;">
+                                        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+                                            {% if p.status == 'completed' %}color: var(--banana-leaf);
+                                            {% elif p.status == 'failed' %}color: #C0392B;
+                                            {% else %}color: var(--turmeric);
+                                            {% endif %}">
+                                            {{ p.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 0.8rem 1rem; color: #665C58;">{{ p.paid_at|date:"d M Y, h:i A"|default:"Unpaid" }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: #887B75; padding: 2rem;">No transaction payments captured yet.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- TAB 3: ANALYTICS SUMMARY -->
+        <div x-show="currentTab === 'analytics'" style="display: none;">
+            
+            <!-- Cards Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="metric-card">
+                    <span class="metric-title">Today's Total Revenue</span>
+                    <span class="metric-value" style="color: var(--banana-leaf);">₹{{ today_sales|floatformat:2 }}</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-title">Today's Orders Placed</span>
+                    <span class="metric-value">{{ today_orders_count }}</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-title">Analytics Timeframe</span>
+                    <span class="metric-value" style="font-size: 1.1rem; font-weight: 700; margin-top: auto;">Daily Running Summary</span>
+                </div>
+            </div>
+
+            <!-- Best Sellers Table -->
+            <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem;">
+                <h3 style="font-size: 1rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                    அதிகம் விற்பனையானவை / Best Selling Products (Quantity Sum)
+                </h3>
+                
+                <table class="dash-table" style="box-shadow: none; border-radius: 0;">
+                    <thead>
+                        <tr style="background-color: transparent; border-bottom: 1px solid var(--border-color);">
+                            <th style="padding: 0.6rem 0.5rem; background-color: transparent;">Product Name (English / Tamil)</th>
+                            <th style="padding: 0.6rem 0.5rem; background-color: transparent; text-align: right;">Total Units Sold</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if top_products %}
+                            {% for item in top_products %}
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.8rem 0.5rem;">
+                                        <strong>{{ item.product__name_en }}</strong> 
+                                        <span class="tamil-text" style="color: var(--banana-leaf); font-size: 0.8rem; margin-left: 0.4rem;">{{ item.product__name_ta }}</span>
+                                    </td>
+                                    <td style="padding: 0.8rem 0.5rem; text-align: right; font-weight: 700; color: var(--terracotta);">{{ item.total_qty }} units</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="2" style="text-align: center; color: #887B75; padding: 2rem;">No sales data aggregates compiled yet.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- TAB 4: ACTIVE DELIVERIES MAPS -->
+        <div x-show="currentTab === 'deliveries'" style="display: none;">
+            
+            <div class="table-container">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer Info</th>
+                            <th>Delivery Address Text</th>
+                            <th>Landmark / Notes</th>
+                            <th>GPS Coordinates</th>
+                            <th>Tracking Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deliveries-tbody"
+                           hx-get="{% url 'admin_dashboard' %}"
+                           hx-trigger="newOrderReceived from:body"
+                           hx-target="this"
+                           hx-select="#deliveries-tbody tr">
+                        {% if active_deliveries %}
+                            {% for order in active_deliveries %}
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ order.id }}</td>
+                                    <td style="padding: 0.8rem 1rem;">
+                                        <div style="font-weight: 600;">{{ order.customer.name }}</div>
+                                        <div style="font-size: 0.75rem; color: #887B75;">{{ order.customer.phone_number }}</div>
+                                    </td>
+                                    <td style="padding: 0.8rem 1rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ order.address.address_text }}">{{ order.address.address_text }}</td>
+                                    <td style="padding: 0.8rem 1rem; color: #665C58;">{{ order.address.landmark|default:"-" }}</td>
+                                    <td style="padding: 0.8rem 1rem; font-family: monospace; font-size: 0.8rem; color: #555;">
+                                        {% if order.address.latitude and order.address.longitude %}
+                                            {{ order.address.latitude }}, {{ order.address.longitude }}
+                                        {% else %}
+                                            No GPS data
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 0.8rem 1rem; text-transform: uppercase; font-weight: 700; font-size: 0.75rem; color: var(--terracotta);">
+                                        {{ order.get_status_display }}
+                                    </td>
+                                    <td style="padding: 0.8rem 1rem;">
+                                        <div style="display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start;">
+                                            {% if order.address.latitude and order.address.longitude %}
+                                                <a href="https://www.google.com/maps/search/?api=1&query={{ order.address.latitude }},{{ order.address.longitude }}" 
+                                                   target="_blank" 
+                                                   class="btn-primary" 
+                                                   style="height: 32px; width: auto; padding: 0 0.8rem; font-size: 0.75rem; background-color: var(--banana-leaf); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem;">
+                                                    <i class="fa-solid fa-map-location-dot"></i> View Route Map
+                                                </a>
+                                            {% else %}
+                                                <span style="color: #999; font-size: 0.75rem; font-style: italic;">Cannot map (no GPS)</span>
+                                            {% endif %}
+                                            
+                                            {% if order.payment.status != 'completed' %}
+                                                <button hx-post="{% url 'admin_update_payment' %}" 
+                                                        hx-vals='{"order_id": "{{ order.id }}", "status": "completed"}'
+                                                        hx-swap="none"
+                                                        hx-include="this"
+                                                        class="btn-primary" 
+                                                        style="height: 32px; width: auto; padding: 0 0.8rem; font-size: 0.75rem; background-color: var(--warning-color); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem;">
+                                                    <i class="fa-solid fa-cash-register"></i> Collect Cash (₹{{ order.total_amount|floatformat:2 }})
+                                                </button>
+                                            {% else %}
+                                                <span style="color: var(--success-color); font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.2rem; margin-top: 0.2rem;">
+                                                    <i class="fa-solid fa-circle-check"></i> Paid (₹{{ order.total_amount|floatformat:2 }})
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: #887B75; padding: 2rem;">No pending deliveries to deliver.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- Background Order Poller for Realtime Live Updates & Audio Notifications -->
+        <div id="order-notification-poller"
+             hx-get="{% url 'admin_order_notification' %}"
+             hx-trigger="every 8s"
+             hx-include="#max-order-input"
+             hx-swap="outerHTML">
+            <input type="hidden" id="max-order-input" name="max_order_id" value="{{ max_order_id }}">
+        </div>
+
+    </div>
+
+</body>
+</html>

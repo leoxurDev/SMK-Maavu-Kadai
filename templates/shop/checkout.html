@@ -1,0 +1,501 @@
+{% extends 'base.html' %}
+
+{% block title %}SMK Flour Shop - Checkout{% endblock %}
+
+{% block extra_head %}
+<!-- Leaflet Map CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+    #checkout-map {
+        height: 220px;
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        z-index: 1;
+        margin-top: 0.4rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 1.5rem auto;">
+    
+    <!-- Header link to go back -->
+    <a href="{% url 'catalog' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--banana-leaf); font-weight: 600; margin-bottom: 1rem;">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span x-show="lang === 'en' || lang === 'both'">Back to Catalog</span>
+        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.85rem;' : ''">திரும்பிச் செல்ல</span>
+    </a>
+
+    <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-md);">
+        
+        <!-- Header Banner -->
+        <div style="background-color: var(--dark-brown); color: white; padding: 1.25rem 1.5rem;">
+            <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.6rem;">
+                <i class="fa-regular fa-credit-card" style="color: var(--turmeric);"></i>
+                <span x-show="lang === 'en' || lang === 'both'">Complete Order</span>
+                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 1rem; margin-left: 2px;' : ''">பதிவு செய்தல்</span>
+            </h2>
+            <p style="font-size: 0.8rem; opacity: 0.85;">
+                <span x-show="lang === 'en' || lang === 'both'">Please fill in your details below to finalize your booking.</span>
+                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">உங்கள் ஆர்டரை முடிக்க கீழே விபரங்களை பூர்த்தி செய்யவும்.</span>
+            </p>
+        </div>
+
+        {% if error %}
+            <div style="background-color: #FDEDEC; border-left: 4px solid #C0392B; color: #C0392B; padding: 1rem; margin: 1rem 1.5rem 0; border-radius: 4px; font-size: 0.9rem; font-weight: 600;">
+                <i class="fa-solid fa-circle-exclamation" style="margin-right: 0.5rem;"></i> {{ error }}
+            </div>
+        {% endif %}
+
+        <!-- Form Wrapper -->
+        <form method="POST" action="{% url 'checkout' %}" x-data="{ orderType: 'pickup', loadingLocation: false, locationError: '', init() { this.$watch('orderType', val => { if (val === 'pickup') { const cartTotal = parseFloat(document.getElementById('grand-total-val').dataset.cartTotal); document.getElementById('grand-total-val').innerText = '₹' + cartTotal.toFixed(2); const btn = document.getElementById('checkout-submit-btn'); if (btn) { btn.disabled = false; btn.style.backgroundColor = 'var(--terracotta)'; btn.style.cursor = 'pointer'; btn.style.boxShadow = '0 4px 6px rgba(216, 92, 56, 0.15)'; btn.innerHTML = `<i class='fa-solid fa-circle-check'></i> <span id='submit-btn-text-en'>Place Order (₹${cartTotal.toFixed(2)})</span> <span class='tamil-text' id='submit-btn-text-ta'>ஆர்டர் செய் (₹${cartTotal.toFixed(2)})</span>`; } } else { setTimeout(() => { if (window.checkoutMap) { window.checkoutMap.invalidateSize(); } }, 150); const lat = document.getElementById('lat-input').value; const lng = document.getElementById('lng-input').value; if (lat && lng) { htmx.trigger(document.body, 'calculateDelivery'); } } }) } }" style="padding: 1.5rem;">
+            {% csrf_token %}
+
+            <!-- Order Summary Section -->
+            <div style="background-color: var(--rice-white); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.8rem; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.4rem;">
+                    <span x-show="lang === 'en' || lang === 'both'">Order Summary</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">உங்களது ஆர்டர் விபரம்</span>
+                </h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    {% for item in cart_items %}
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                            <div>
+                                <span style="font-weight: 700; color: var(--dark-brown);">{{ item.quantity }}x</span> 
+                                <span x-show="lang === 'en' || lang === 'both'">{{ item.product.name_en }}</span>
+                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" style="font-size: 0.8rem;">{{ item.product.name_ta }}</span>
+                                <span style="font-size: 0.75rem; color: #887B75;">({{ item.slab.quantity_value }} {{ item.slab.get_quantity_unit_display }})</span>
+                            </div>
+                            <span style="font-weight: 600;">₹{{ item.subtotal|floatformat:2 }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div style="border-top: 1px dashed var(--border-color); margin-top: 0.8rem; padding-top: 0.6rem; color: var(--dark-brown);">
+                    <!-- Subtotal Row -->
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.4rem;">
+                        <span x-show="lang === 'en' || lang === 'both'">Items Subtotal</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">பொருட்களின் விலை</span>
+                        <span>₹{{ cart_total|floatformat:2 }}</span>
+                    </div>
+                    
+                    <!-- Delivery Fee Row -->
+                    <div x-show="orderType === 'delivery'" style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.4rem;" id="delivery-fee-container"
+                         hx-get="{% url 'calculate_delivery' %}"
+                         hx-trigger="calculateDelivery from:body"
+                         hx-include="#lat-input,#lng-input">
+                        <span x-show="lang === 'en' || lang === 'both'">Delivery Fee</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">டெலிவரி கட்டணம்</span>
+                        <span style="color: var(--banana-leaf); font-weight: 600;">Calculated at checkout</span>
+                    </div>
+
+                    <!-- Grand Total Row -->
+                    <div style="display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 800; border-top: 1px solid var(--border-color); padding-top: 0.4rem;">
+                        <span x-show="lang === 'en' || lang === 'both'">Total Payable</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">மொத்த தொகை</span>
+                        <span id="grand-total-val" data-cart-total="{{ cart_total }}">₹{{ cart_total|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Profile Info -->
+            <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.3rem;">
+                        <span x-show="lang === 'en' || lang === 'both'">Your Name *</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.75rem;' : ''">உங்கள் பெயர் *</span>
+                    </label>
+                    <input type="text" 
+                           name="name" 
+                           required 
+                           value="{{ current_customer.name|default:'' }}"
+                           placeholder="Enter your full name"
+                           style="width: 100%; height: 42px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 0.8rem; font-family: var(--font-primary); font-size: 0.9rem; outline: none; transition: var(--transition-smooth);"
+                           onfocus="this.style.borderColor='var(--terracotta)'"
+                           onblur="this.style.borderColor='var(--border-color)'">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.3rem;">
+                        <span x-show="lang === 'en' || lang === 'both'">Phone Number *</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.75rem;' : ''">கைபேசி எண் *</span>
+                    </label>
+                    <input type="tel" 
+                           name="phone_number" 
+                           required 
+                           value="{{ current_customer.phone_number|default:'' }}"
+                           placeholder="10-digit mobile number"
+                           pattern="[0-9]{10}"
+                           style="width: 100%; height: 42px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 0.8rem; font-family: var(--font-primary); font-size: 0.9rem; outline: none; transition: var(--transition-smooth);"
+                           onfocus="this.style.borderColor='var(--terracotta)'"
+                           onblur="this.style.borderColor='var(--border-color)'">
+                </div>
+            </div>
+
+            <!-- Order Type Selection -->
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.5rem;">
+                    <span x-show="lang === 'en' || lang === 'both'">Delivery Option *</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.75rem;' : ''">பெறுதல் முறை *</span>
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+                    <!-- Pickup tab -->
+                    <label style="cursor: pointer;">
+                        <input type="radio" 
+                               name="order_type" 
+                               value="pickup" 
+                               checked 
+                               @change="orderType = 'pickup'" 
+                               style="position: absolute; opacity: 0; width: 0; height: 0;">
+                        <div style="border: 2px solid var(--border-color); border-radius: 10px; padding: 0.8rem; text-align: center; font-weight: 700; font-size: 0.9rem; transition: var(--transition-smooth); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem;"
+                             :style="orderType === 'pickup' ? 'border-color: var(--terracotta); background-color: var(--rice-cream); color: var(--terracotta);' : 'background-color: white; color: var(--dark-brown);'">
+                            <span>
+                                <i class="fa-solid fa-store" style="margin-right: 0.2rem;"></i>
+                                <span x-show="lang === 'en' || lang === 'both'">Store Pickup</span>
+                            </span>
+                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" style="font-size: 0.75rem; font-weight: 500;">கடையில் வாங்குதல்</span>
+                        </div>
+                    </label>
+                    <!-- Delivery tab -->
+                    <label style="cursor: pointer;">
+                        <input type="radio" 
+                               name="order_type" 
+                               value="delivery" 
+                               @change="orderType = 'delivery'" 
+                               style="position: absolute; opacity: 0; width: 0; height: 0;">
+                        <div style="border: 2px solid var(--border-color); border-radius: 10px; padding: 0.8rem; text-align: center; font-weight: 700; font-size: 0.9rem; transition: var(--transition-smooth); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem;"
+                             :style="orderType === 'delivery' ? 'border-color: var(--terracotta); background-color: var(--rice-cream); color: var(--terracotta);' : 'background-color: white; color: var(--dark-brown);'">
+                            <span>
+                                <i class="fa-solid fa-truck" style="margin-right: 0.2rem;"></i>
+                                <span x-show="lang === 'en' || lang === 'both'">Home Delivery</span>
+                            </span>
+                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" style="font-size: 0.75rem; font-weight: 500;">வீட்டுக்கு டெலிவரி</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Conditional Geolocation Address Fields -->
+            <div x-show="orderType === 'delivery'" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-2"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 style="background-color: #FAF7F2; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem;">
+                
+                <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="fa-solid fa-map-location-dot" style="color: var(--banana-leaf);"></i>
+                    <span x-show="lang === 'en' || lang === 'both'">Delivery Address</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; font-weight: 500;' : ''">டெலிவரி முகவரி</span>
+                </h4>
+
+                <!-- Locate Me Button -->
+                <div style="margin-bottom: 1rem;">
+                    <button type="button" 
+                            class="btn-primary" 
+                            style="background-color: var(--banana-leaf); width: auto; font-size: 0.8rem; padding: 0.5rem 1rem; border-radius: 6px;"
+                            @click="
+                                loadingLocation = true;
+                                locationError = '';
+                                if (!navigator.geolocation) {
+                                    loadingLocation = false;
+                                    locationError = 'Geolocation is not supported by your browser.';
+                                    return;
+                                }
+                                navigator.geolocation.getCurrentPosition(
+                                    (position) => {
+                                        const lat = position.coords.latitude;
+                                        const lng = position.coords.longitude;
+                                        document.getElementById('lat-input').value = lat;
+                                        document.getElementById('lng-input').value = lng;
+                                        if (window.updateMapLocation) { window.updateMapLocation(lat, lng); }
+                                        htmx.trigger(document.body, 'calculateDelivery');
+                                        
+                                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+                                            headers: {
+                                                'User-Agent': 'SMKFlourShopQRApp'
+                                            }
+                                        })
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            loadingLocation = false;
+                                            if (data && data.display_name) {
+                                                document.getElementById('address-input').value = data.display_name;
+                                            } else {
+                                                locationError = 'Unable to pinpoint address, please input manually.';
+                                            }
+                                        })
+                                        .catch(err => {
+                                            loadingLocation = false;
+                                            locationError = 'Address service busy, please type address manually.';
+                                        });
+                                    },
+                                    (error) => {
+                                        loadingLocation = false;
+                                        switch(error.code) {
+                                            case error.PERMISSION_DENIED:
+                                                locationError = 'Please enable GPS/Location permissions on your device.';
+                                                break;
+                                            default:
+                                                locationError = 'Location capture failed. Please type manually.';
+                                        }
+                                    },
+                                    { enableHighAccuracy: true, timeout: 8000 }
+                                );
+                            ">
+                        <i class="fa-solid fa-location-crosshairs" :class="loadingLocation ? 'fa-spin' : ''"></i>
+                        <span x-show="loadingLocation">Pinpointing GPS location...</span>
+                        <span x-show="!loadingLocation">
+                            <span x-show="lang === 'en' || lang === 'both'">Get Current GPS Location</span>
+                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.75rem; margin-left: 2px;' : ''">இடத்தை கண்டறி</span>
+                        </span>
+                    </button>
+
+                    <div x-show="locationError" style="color: #C0392B; font-size: 0.75rem; margin-top: 0.4rem; font-weight: 600;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> <span x-text="locationError"></span>
+                    </div>
+                </div>
+
+                <!-- Interactive Leaflet Map Picker -->
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #665C58; margin-bottom: 0.4rem;">
+                        <span x-show="lang === 'en' || lang === 'both'">Or Pinpoint Delivery Spot on Map</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.7rem;' : ''">அல்லது வரைபடத்தில் இடத்தை தேர்வு செய்க</span>
+                    </label>
+
+                    <!-- Location Search Block -->
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.6rem;">
+                        <input type="text" 
+                               id="map-search-input" 
+                               placeholder="Search area, street, or building name..." 
+                               style="flex-grow: 1; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 0.8rem; font-family: var(--font-primary); font-size: 0.85rem; outline: none; background-color: var(--input-bg); color: var(--text-primary); transition: var(--transition-smooth);"
+                               onfocus="this.style.borderColor='var(--terracotta)'"
+                               onblur="this.style.borderColor='var(--border-color)'">
+                        <button type="button" 
+                                id="map-search-btn" 
+                                class="btn-primary" 
+                                style="width: auto; height: 38px; padding: 0 1rem; border-radius: 8px; font-size: 0.8rem; background-color: var(--banana-leaf); display: inline-flex; align-items: center; gap: 0.3rem;">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <span x-show="lang === 'en' || lang === 'both'">Search</span>
+                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.75rem; margin-left: 2px;' : ''">தேடு</span>
+                        </button>
+                    </div>
+                    <div id="map-search-error" style="color: #C0392B; font-size: 0.75rem; display: none; margin-bottom: 0.4rem; font-weight: 600;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Location not found. Please try a different query.
+                    </div>
+
+                    <div id="checkout-map"></div>
+                    <span style="font-size: 0.65rem; color: var(--text-secondary); display: block; margin-top: 0.3rem; font-weight: 500;">
+                        <i class="fa-solid fa-circle-info"></i> Click on the map or drag the marker to adjust your delivery address precisely.
+                    </span>
+                </div>
+
+                <!-- Hidden inputs to store coordinates -->
+                <input type="hidden" name="latitude" id="lat-input">
+                <input type="hidden" name="longitude" id="lng-input">
+
+                <div style="margin-bottom: 0.8rem;">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #665C58; margin-bottom: 0.2rem;">
+                        <span x-show="lang === 'en' || lang === 'both'">Full Address Text *</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.7rem;' : ''">முழு முகவரி விபரம் *</span>
+                    </label>
+                    <textarea name="address_text" 
+                              id="address-input" 
+                              rows="3" 
+                              placeholder="House No, Street name, area..."
+                              style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; font-family: var(--font-primary); font-size: 0.85rem; outline: none; resize: vertical; transition: var(--transition-smooth);"
+                              onfocus="this.style.borderColor='var(--terracotta)'"
+                              onblur="this.style.borderColor='var(--border-color)'"></textarea>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #665C58; margin-bottom: 0.2rem;">
+                        <span x-show="lang === 'en' || lang === 'both'">Landmark / Delivery Notes (Optional)</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.7rem;' : ''">அடையாளம் / குறிப்புகள் (விருப்பம்)</span>
+                    </label>
+                    <input type="text" 
+                           name="landmark" 
+                           placeholder="e.g. Near Muthusamy Hospital"
+                           style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 0.8rem; font-family: var(--font-primary); font-size: 0.85rem; outline: none; transition: var(--transition-smooth);"
+                           onfocus="this.style.borderColor='var(--terracotta)'"
+                           onblur="this.style.borderColor='var(--border-color)'">
+                </div>
+            </div>
+
+            <!-- Payment Method Selection -->
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.5rem;">
+                    <span x-show="lang === 'en' || lang === 'both'">Payment Method *</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.75rem;' : ''">பணம் செலுத்தும் முறை *</span>
+                </label>
+                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    
+                    <!-- COD option -->
+                    <label style="display: flex; align-items: center; gap: 0.6rem; border: 1px solid var(--border-color); padding: 0.8rem; border-radius: 8px; cursor: pointer; transition: var(--transition-smooth);"
+                           onmouseover="this.style.borderColor='var(--terracotta)'"
+                           onmouseout="this.style.borderColor='var(--border-color)'">
+                        <input type="radio" name="payment_method" value="cod" checked style="accent-color: var(--terracotta);">
+                        <div>
+                            <div style="font-size: 0.85rem; font-weight: 700; color: var(--dark-brown);">
+                                <span x-show="lang === 'en' || lang === 'both'">Cash on Delivery / Pay on Pickup (COD)</span>
+                                <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.8rem;">ஆர்டர் பெறும்போது பணம் செலுத்துதல்</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: #887B75;" x-show="lang === 'ta' || lang === 'both'" class="tamil-text">நேரடியாக பணம் செலுத்துதல்</div>
+                        </div>
+                    </label>
+
+                    <!-- Razorpay option -->
+                    <label style="display: flex; align-items: center; gap: 0.6rem; border: 1px solid var(--border-color); padding: 0.8rem; border-radius: 8px; cursor: pointer; transition: var(--transition-smooth);"
+                           onmouseover="this.style.borderColor='var(--terracotta)'"
+                           onmouseout="this.style.borderColor='var(--border-color)'">
+                        <input type="radio" name="payment_method" value="online" style="accent-color: var(--terracotta);">
+                        <div>
+                            <div style="font-size: 0.85rem; font-weight: 700; color: var(--dark-brown);">
+                                <span x-show="lang === 'en' || lang === 'both'">Pay Online (UPI, Cards, Netbanking)</span>
+                                <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.8rem;">ஆன்லைன் கட்டணம்</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: #887B75;" x-show="lang === 'ta' || lang === 'both'" class="tamil-text">ஆன்லைன் மூலமாக செலுத்துதல் (Razorpay)</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="checkout-submit-btn" class="btn-primary" style="height: 48px; font-size: 1rem; background-color: var(--terracotta); box-shadow: 0 4px 6px rgba(216, 92, 56, 0.15);">
+                <i class="fa-solid fa-circle-check"></i>
+                <span x-show="lang === 'en' || lang === 'both'" id="submit-btn-text-en">Place Order (₹{{ cart_total|floatformat:2 }})</span>
+                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.95rem; margin-left: 2px;' : ''" id="submit-btn-text-ta">ஆர்டர் செய் (₹{{ cart_total|floatformat:2 }})</span>
+            </button>
+
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Shop location (Selvapuram)
+        const shopLat = 10.987270;
+        const shopLng = 76.939040;
+        
+        // Initialize map
+        const map = L.map('checkout-map').setView([shopLat, shopLng], 14);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Add a draggable marker for the customer
+        let marker = L.marker([shopLat, shopLng], { draggable: true }).addTo(map);
+        
+        function updateCoordinates(lat, lng, updateAddressText=true) {
+            document.getElementById('lat-input').value = lat;
+            document.getElementById('lng-input').value = lng;
+            
+            // Trigger distance / delivery charge recalculation
+            htmx.trigger(document.body, 'calculateDelivery');
+            
+            if (updateAddressText) {
+                // Reverse geocode to get the address text
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+                    headers: {
+                        'User-Agent': 'SMKFlourShopQRApp'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.display_name) {
+                        document.getElementById('address-input').value = data.display_name;
+                    }
+                })
+                .catch(err => console.log('Reverse geocoding error:', err));
+            }
+        }
+        
+        // Update on marker drag end
+        marker.on('dragend', function(e) {
+            const position = marker.getLatLng();
+            updateCoordinates(position.lat, position.lng);
+        });
+        
+        // Update on map click
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            updateCoordinates(e.latlng.lat, e.latlng.lng);
+        });
+        
+        // Expose callback globally so the Geolocation GPS button can update the map
+        window.updateMapLocation = function(lat, lng) {
+            const latLng = L.latLng(lat, lng);
+            marker.setLatLng(latLng);
+            map.setView(latLng, 16);
+            updateCoordinates(lat, lng, false); // Don't reverse-geocode again since GPS locator already does Nominatim reverse-geocoding!
+        };
+        
+        // Search button click handler
+        const searchInput = document.getElementById('map-search-input');
+        const searchBtn = document.getElementById('map-search-btn');
+        const searchError = document.getElementById('map-search-error');
+        
+        searchBtn.addEventListener('click', function() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+            
+            searchError.style.display = 'none';
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            
+            // Search using Nominatim OpenStreetMap API, biased near Selvapuram
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=76.85,11.05,77.05,10.90&bounded=0&limit=1`, {
+                headers: {
+                    'User-Agent': 'SMKFlourShopQRApp'
+                }
+            })
+            .then(res => res.json())
+            .then(results => {
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
+                
+                if (results && results.length > 0) {
+                    const firstResult = results[0];
+                    const lat = parseFloat(firstResult.lat);
+                    const lng = parseFloat(firstResult.lon);
+                    
+                    const latLng = L.latLng(lat, lng);
+                    marker.setLatLng(latLng);
+                    map.setView(latLng, 16);
+                    
+                    updateCoordinates(lat, lng, false);
+                    document.getElementById('address-input').value = firstResult.display_name;
+                } else {
+                    searchError.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
+                searchError.style.display = 'block';
+                console.error('Search error:', err);
+            });
+        });
+        
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchBtn.click();
+            }
+        });
+
+        // Expose map globally so Alpine can trigger invalidateSize
+        window.checkoutMap = map;
+
+        // Delay map rendering slightly if elements are not fully painted
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 300);
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,144 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}SMK Flour Shop{% endblock %}</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Core Custom Stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
+    
+    <!-- Alpine.js for lightweight UI interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- HTMX for AJAX interactions -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body x-data="{ cartOpen: false, lang: localStorage.getItem('lang') || 'both', theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') }" :class="theme" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+    <!-- Header Section -->
+    <header>
+        <div class="header-container">
+            <a href="{% url 'catalog' %}" style="text-decoration: none; color: inherit;">
+                <div class="logo-group">
+                    <i class="fa-solid fa-bag-shopping logo-icon"></i>
+                    <div class="brand-text">
+                        <h1>SMK Flour Shop</h1>
+                        <span>Selvapuram, Coimbatore</span>
+                    </div>
+                </div>
+            </a>
+            
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <!-- Light / Dark theme toggle -->
+                <button class="theme-toggle-btn" @click="theme = (theme === 'light' ? 'dark' : 'light'); localStorage.setItem('theme', theme)" aria-label="Toggle Theme">
+                    <i class="fa-solid" :class="theme === 'light' ? 'fa-moon' : 'fa-sun'"></i>
+                </button>
+
+                <!-- Bilingual Switch Widget -->
+                <div class="lang-toggle-group">
+                    <button class="lang-toggle-btn" :class="lang === 'en' ? 'active' : ''" @click="lang = 'en'; localStorage.setItem('lang', 'en')">EN</button>
+                    <button class="lang-toggle-btn" :class="lang === 'ta' ? 'active' : ''" @click="lang = 'ta'; localStorage.setItem('lang', 'ta')">தமிழ்</button>
+                    <button class="lang-toggle-btn" :class="lang === 'both' ? 'active' : ''" @click="lang = 'both'; localStorage.setItem('lang', 'both')">Both</button>
+                </div>
+
+                <!-- Customer Account Actions -->
+                {% if current_customer %}
+                    <a href="{% url 'my_orders' %}" class="header-nav-btn" style="padding: 0.35rem 0.7rem; font-size: 0.75rem; border: 1px solid var(--border-color); border-radius: 12px; display: inline-flex; align-items: center; gap: 0.3rem;">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span x-show="lang === 'en' || lang === 'both'">My Orders</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.65rem;' : ''">ஆர்டர்கள்</span>
+                    </a>
+                    <a href="{% url 'customer_logout' %}" class="theme-toggle-btn" title="Logout" style="font-size: 0.85rem; color: var(--danger-color); display: inline-flex;">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
+                {% else %}
+                    <a href="{% url 'customer_login' %}" class="header-nav-btn" style="padding: 0.35rem 0.7rem; font-size: 0.75rem; border: 1px solid var(--border-color); border-radius: 12px; display: inline-flex; align-items: center; gap: 0.3rem;">
+                        <i class="fa-solid fa-user"></i>
+                        <span x-show="lang === 'en' || lang === 'both'">Login</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.65rem;' : ''">உள்நுழை</span>
+                    </a>
+                {% endif %}
+
+                <!-- Cart Badge Trigger -->
+                <button class="cart-btn" 
+                        @click="cartOpen = true" 
+                        hx-get="{% url 'cart_drawer' %}" 
+                        hx-target="#cart-drawer-target"
+                        aria-label="Open Cart">
+                    <i class="fa-solid fa-shopping-bag fa-lg"></i>
+                    <div id="cart-badge-container" hx-get="{% url 'cart_badge' %}" hx-trigger="load, cartUpdated from:body">
+                        {% include 'shop/partials/cart_badge.html' %}
+                    </div>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero / Banner Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h2>SMK மாவு கடை <span style="font-size: 1.1rem; color: #887B75; font-weight: 500;">/ Flour Shop</span></h2>
+            <p>Freshly grounded batters, custom podis, hot ready-made chapathis & curries delivered daily in Selvapuram.</p>
+            <div class="address-badge">
+                <i class="fa-solid fa-location-dot"></i>
+                <span>Opposite Rani Hospital, Selvapuram, Coimbatore</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Slide-over Cart Drawer -->
+    <template x-teleport="body">
+        <div class="drawer-backdrop" 
+             x-show="cartOpen" 
+             x-transition:opacity
+             @click.away="cartOpen = false" 
+             style="display: none;">
+            
+            <div class="drawer-container" 
+                 x-show="cartOpen" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="transform translate-x-full"
+                 x-transition:enter-end="transform translate-x-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="transform translate-x-0"
+                 x-transition:leave-end="transform translate-x-full">
+                
+                <div class="drawer-header">
+                    <div class="drawer-title">
+                        <i class="fa-solid fa-bag-shopping" style="color: var(--accent-color);"></i>
+                        <span>உங்களது கூடை / Your Cart</span>
+                    </div>
+                    <button class="drawer-close" @click="cartOpen = false" aria-label="Close Cart">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                
+                <!-- Dynamic Content Loaded by HTMX -->
+                <div id="cart-drawer-target" 
+                     class="drawer-content"
+                     hx-get="{% url 'cart_drawer' %}"
+                     hx-trigger="load, cartUpdated from:body">
+                    <div class="cart-empty">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <p>Loading cart...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

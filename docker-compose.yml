@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: smk_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: smk_flour_shop
+      MYSQL_USER: smk_user
+      MYSQL_PASSWORD: smk_password
+      MYSQL_ROOT_PASSWORD: smk_root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    container_name: smk_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    container_name: smk_web
+    restart: always
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - DB_ENGINE=mysql
+      - DB_NAME=smk_flour_shop
+      - DB_USER=smk_user
+      - DB_PASSWORD=smk_password
+      - DB_HOST=db
+      - DB_PORT=3306
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    build: .
+    container_name: smk_celery
+    restart: always
+    command: celery -A smk_flour_shop worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - DEBUG=True
+      - DB_ENGINE=mysql
+      - DB_NAME=smk_flour_shop
+      - DB_USER=smk_user
+      - DB_PASSWORD=smk_password
+      - DB_HOST=db
+      - DB_PORT=3306
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  mysql_data:

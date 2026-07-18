@@ -1,0 +1,57 @@
+<tr id="order-row-{{ order.id }}" style="border-bottom: 1px solid var(--border-color);">
+    <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ order.id }}</td>
+    <td style="padding: 0.8rem 1rem;">
+        <div style="font-weight: 600;">{{ order.customer.name }}</div>
+        <div style="font-size: 0.75rem; color: #887B75;">{{ order.customer.phone_number }}</div>
+    </td>
+    <td style="padding: 0.8rem 1rem;">
+        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            {% if order.order_type == 'pickup' %}color: var(--terracotta);{% else %}color: var(--banana-leaf);{% endif %}">
+            {{ order.get_order_type_display }}
+        </span>
+    </td>
+    <td style="padding: 0.8rem 1rem; font-size: 0.8rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{% for item in order.items.all %}{{ item.quantity }}x {{ item.product.name_en }} ({{ item.price_slab.quantity_value }}{{ item.price_slab.quantity_unit }}){% if not forloop.last %}, {% endif %}{% endfor %}">
+        {% for item in order.items.all %}
+            {{ item.quantity }}x {{ item.product.name_en }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </td>
+    <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">₹{{ order.total_amount|floatformat:2 }}</td>
+    <td style="padding: 0.8rem 1rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.3rem; align-items: flex-start;">
+            <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+                {% if order.payment.status == 'completed' %}color: var(--banana-leaf);
+                {% elif order.payment.status == 'failed' %}color: #C0392B;
+                {% else %}color: var(--turmeric);
+                {% endif %}">
+                {{ order.payment.get_status_display }}
+            </span>
+            {% if order.payment.status != 'completed' %}
+                <button hx-post="{% url 'admin_update_payment' %}" 
+                        hx-vals='{"order_id": "{{ order.id }}", "status": "completed"}'
+                        hx-swap="none"
+                        hx-include="this"
+                        class="btn-primary"
+                        style="width: auto; height: auto; font-size: 0.65rem; padding: 0.2rem 0.4rem; border-radius: 4px; background-color: var(--banana-leaf); cursor: pointer;">
+                    Mark Paid
+                </button>
+            {% endif %}
+        </div>
+    </td>
+    <td style="padding: 0.8rem 1rem;">
+        <select name="status" 
+                hx-post="{% url 'admin_update_status' %}" 
+                hx-vals='{"order_id": "{{ order.id }}"}'
+                hx-swap="none"
+                hx-include="this"
+                style="height: 32px; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 0.4rem; font-size: 0.8rem; font-weight: 600; outline: none; background-color: var(--bg-card); cursor: pointer; transition: var(--transition-smooth);
+                    {% if order.status == 'received' %}border-color: var(--turmeric); color: var(--turmeric) !important;
+                    {% elif order.status == 'preparing' %}border-color: #e67e22; color: #e67e22 !important;
+                    {% elif order.status == 'ready' %}border-color: var(--banana-leaf); color: var(--banana-leaf) !important;
+                    {% elif order.status == 'completed' %}border-color: var(--text-secondary); color: var(--text-secondary) !important;
+                    {% endif %}">
+            {% for code, label in status_choices %}
+                <option value="{{ code }}" {% if order.status == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </td>
+</tr>

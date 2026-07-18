@@ -1,0 +1,36 @@
+<div id="order-notification-poller"
+     hx-get="{% url 'admin_order_notification' %}"
+     hx-trigger="every 8s"
+     hx-include="#max-order-input"
+     hx-swap="outerHTML">
+    <input type="hidden" id="max-order-input" name="max_order_id" value="{{ new_max_id }}">
+    
+    {% if new_order %}
+        <div id="notification-banner" style="position: fixed; top: 1.5rem; right: 1.5rem; background-color: var(--banana-leaf); color: white; padding: 0.8rem 1.2rem; border-radius: 8px; box-shadow: var(--shadow-md); z-index: 9999; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 0.6rem; animation: slideIn 0.3s ease-out;" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4500)">
+            <i class="fa-solid fa-bell fa-bounce"></i>
+            <span>New Order Received! / புதிய ஆர்டர் வந்துள்ளது!</span>
+            <button @click="show = false" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; margin-left: 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <script>
+            (function() {
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const playNote = (freq, delay, duration) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+                        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + duration);
+                        osc.start(audioCtx.currentTime + delay);
+                        osc.stop(audioCtx.currentTime + delay + duration);
+                    };
+                    playNote(587.33, 0, 0.2); // D5
+                    playNote(880.00, 0.12, 0.45); // A5
+                } catch(e) { console.log('AudioContext chime error:', e); }
+            })();
+        </script>
+    {% endif %}
+</div>

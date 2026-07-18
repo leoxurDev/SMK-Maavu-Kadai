@@ -1,0 +1,121 @@
+<div id="status-timeline-poll" 
+     hx-get="{% url 'order_status_api' order.id %}" 
+     hx-trigger="every 5s" 
+     hx-swap="outerHTML">
+     
+    <!-- Progress Timeline UI -->
+    <div style="margin-bottom: 2.5rem; position: relative;">
+        
+        <!-- Status Timeline Line -->
+        <div style="position: absolute; top: 15px; left: 10%; right: 10%; height: 3px; background-color: #E2E8F0; z-index: 1;"></div>
+        
+        <!-- Active Timeline Fill -->
+        <div style="position: absolute; top: 15px; left: 10%; height: 3px; background-color: var(--banana-leaf); z-index: 2; transition: var(--transition-smooth);
+            {% if order.status == 'received' %}width: 0%;
+            {% elif order.status == 'preparing' %}width: 27%;
+            {% elif order.status == 'ready' %}width: 54%;
+            {% elif order.status == 'completed' %}width: 80%;
+            {% endif %}">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; position: relative; z-index: 3;">
+            <!-- Step 1: Received -->
+            <div style="text-align: center; width: 25%;">
+                <div style="width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: 700; transition: var(--transition-smooth);
+                    {% if order.status != 'cancelled' %}
+                        background-color: var(--banana-leaf); color: white;
+                    {% else %}
+                        background-color: #CBD5E1; color: white;
+                    {% endif %}">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--dark-brown);">
+                    <span x-show="lang === 'en' || lang === 'both'">Received</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.65rem; font-weight: 500;' : ''">பெறப்பட்டது</span>
+                </span>
+            </div>
+
+            <!-- Step 2: Preparing -->
+            <div style="text-align: center; width: 25%;">
+                <div style="width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: 700; transition: var(--transition-smooth);
+                    {% if order.status == 'preparing' or order.status == 'ready' or order.status == 'completed' %}
+                        background-color: var(--banana-leaf); color: white;
+                    {% else %}
+                        background-color: #E2E8F0; color: #64748B;
+                    {% endif %}">
+                    {% if order.status == 'preparing' %}<i class="fa-solid fa-spinner fa-spin"></i>{% else %}2{% endif %}
+                </div>
+                <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--dark-brown);">
+                    <span x-show="lang === 'en' || lang === 'both'">Preparing</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.65rem; font-weight: 500;' : ''">தயாராகிறது</span>
+                </span>
+            </div>
+
+            <!-- Step 3: Ready -->
+            <div style="text-align: center; width: 25%;">
+                <div style="width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: 700; transition: var(--transition-smooth);
+                    {% if order.status == 'ready' or order.status == 'completed' %}
+                        background-color: var(--banana-leaf); color: white;
+                    {% else %}
+                        background-color: #E2E8F0; color: #64748B;
+                    {% endif %}">
+                    {% if order.status == 'ready' %}<i class="fa-solid fa-bell fa-bounce"></i>{% else %}3{% endif %}
+                </div>
+                <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--dark-brown);">
+                    {% if order.order_type == 'pickup' %}
+                        <span x-show="lang === 'en' || lang === 'both'">Ready for Pickup</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.65rem; font-weight: 500;' : ''">தயாராக உள்ளது</span>
+                    {% else %}
+                        <span x-show="lang === 'en' || lang === 'both'">Out for Delivery</span>
+                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.65rem; font-weight: 500;' : ''">டெலிவரிக்கு சென்றது</span>
+                    {% endif %}
+                </span>
+            </div>
+
+            <!-- Step 4: Completed -->
+            <div style="text-align: center; width: 25%;">
+                <div style="width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: 700; transition: var(--transition-smooth);
+                    {% if order.status == 'completed' %}
+                        background-color: var(--banana-leaf); color: white;
+                    {% else %}
+                        background-color: #E2E8F0; color: #64748B;
+                    {% endif %}">
+                    {% if order.status == 'completed' %}<i class="fa-solid fa-heart"></i>{% else %}4{% endif %}
+                </div>
+                <span style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--dark-brown);">
+                    <span x-show="lang === 'en' || lang === 'both'">Completed</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.65rem; font-weight: 500;' : ''">முடிந்தது</span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Online Payment Attention Section -->
+    {% if payment and payment.method == 'online' and payment.status == 'pending' %}
+        <div style="background-color: #FAF4E6; border: 1px solid var(--turmeric); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem;" id="payment-attention-box">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-circle-exclamation" style="color: var(--turmeric);"></i>
+                <span x-show="lang === 'en' || lang === 'both'">Complete Payment</span>
+                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">கட்டணம் செலுத்தவும்</span>
+            </h3>
+            <p style="font-size: 0.8rem; color: #665C58; margin-bottom: 1rem;">
+                <span x-show="lang === 'en' || lang === 'both'">This is an online payment order. Please click the button below to secure your transaction with Razorpay.</span>
+                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">இது ஆன்லைன் மூலமாக செலுத்தும் ஆர்டர். உங்கள் பரிவர்த்தனையை முடிக்க கீழே உள்ள பொத்தானை கிளிக் செய்யவும்.</span>
+            </p>
+            
+            <button class="btn-primary" style="background-color: #002B49; box-shadow: 0 4px 6px rgba(0, 43, 73, 0.15); width: auto;" id="pay-button">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span x-show="lang === 'en' || lang === 'both'">Pay Online via Razorpay (₹{{ order.total_amount|floatformat:2 }})</span>
+                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.85rem; margin-left: 2px;' : ''">கட்டணம் செலுத்துக (₹{{ order.total_amount|floatformat:2 }})</span>
+            </button>
+        </div>
+        
+        <!-- Re-bind script click handler to new dynamically loaded button if swapped -->
+        <script>
+            if (window.bindPayButton) {
+                window.bindPayButton();
+            }
+        </script>
+    {% endif %}
+
+</div>
