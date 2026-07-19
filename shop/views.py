@@ -593,7 +593,9 @@ def send_sms_otp(phone_number, otp):
         sms_provider = 'twilio'
     elif sms_provider == 'none' and os.getenv('FAST2SMS_API_KEY'):
         sms_provider = 'fast2sms'
-    message = f"Your SMK Flour Shop verification code is {otp}."
+    
+    business_name = os.getenv('SMS_BUSINESS_NAME', 'Manikandan Maavu Kadai').strip()
+    message = f"Your {business_name} verification code is {otp}."
     
     formatted_phone = phone_number
     if len(phone_number) == 10 and phone_number.isdigit():
@@ -638,7 +640,6 @@ def send_sms_otp(phone_number, otp):
             return False
             
         raw_10_digits = phone_number[-10:]
-        message = f"Your SMK Flour Shop verification code is {otp}."
         params = urllib.parse.urlencode({
             'authorization': api_key,
             'route': 'q',
