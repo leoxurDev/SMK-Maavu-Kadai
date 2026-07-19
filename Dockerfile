@@ -1,11 +1,12 @@
-# --- Stage 1: Build dependencies ---
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim
 
+# Prevent Python from writing .pyc files and buffer stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Install system build and runtime dependencies globally
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
@@ -13,28 +14,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Install python dependencies globally
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# --- Stage 2: Final minimal runtime ---
-FROM python:3.11-slim AS runner
-
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-WORKDIR /app
-
-# Install runtime system libraries (no build tools)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    default-libmysqlclient-dev \
-    libmagic1 \
-    && rm -rf /var/lib/apt/lists/*
-
 # Create a non-root system user and group
 RUN groupadd -r appgroup && useradd -r -g appgroup -d /home/appuser -m appuser
-
-# Copy installed python dependencies from builder globally so all users (including root) can access them
-COPY --from=builder /usr/local /usr/local
 
 # Copy project files and set ownership
 COPY --chown=appuser:appgroup . /app/
