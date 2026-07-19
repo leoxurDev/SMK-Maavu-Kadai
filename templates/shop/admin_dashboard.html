@@ -214,7 +214,7 @@
         }
     </style>
 </head>
-<body x-data="{ currentTab: 'orders', lang: 'both', activeItemsOrder: null, showAddProductModal: false, showAddSlabModal: false, activeProductIdForSlab: null, activeProductNameForSlab: '' }" class="light" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body x-data="{ currentTab: localStorage.getItem('adminCurrentTab') || 'orders', lang: 'both', activeItemsOrder: null, showAddProductModal: false, showAddSlabModal: false, activeProductIdForSlab: null, activeProductNameForSlab: '' }" x-init="$watch('currentTab', val => localStorage.setItem('adminCurrentTab', val))" class="light" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
     <!-- Header Section -->
     <header>
