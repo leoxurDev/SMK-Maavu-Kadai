@@ -1195,6 +1195,7 @@ def delivery_mark_completed(request):
 @staff_member_required
 @require_POST
 def admin_assign_delivery(request):
+    from django.contrib.auth.models import User
     order_id = request.POST.get('order_id')
     agent_id = request.POST.get('agent_id')
     order = get_object_or_404(Order, id=order_id)
@@ -1208,7 +1209,6 @@ def admin_assign_delivery(request):
     
     if request.htmx:
         # Render the updated order row snippet
-        from django.contrib.auth.models import User
         delivery_staff = User.objects.filter(
             Q(groups__name='Delivery Staff') | Q(is_staff=True)
         ).distinct().order_by('username')
