@@ -127,15 +127,21 @@ class PriceSlab(models.Model):
 
     def is_in_stock(self, quantity=1):
         if self.product.inventory_type == 'bulk':
-            needed_weight = self.quantity_value * quantity
-            return self.product.bulk_stock >= needed_weight
+            needed = normalize_to_base(self.quantity_value, self.quantity_unit) * quantity
+            available = normalize_to_base(self.product.bulk_stock, self.product.bulk_unit)
+            return available >= needed
         else:
             return self.stock >= quantity
 
     def deduct_stock(self, quantity=1):
         if self.product.inventory_type == 'bulk':
-            needed_weight = self.quantity_value * quantity
-            self.product.bulk_stock = max(0, self.product.bulk_stock - needed_weight)
+            needed = normalize_to_base(self.quantity_value, self.quantity_unit) * quantity
+            available = normalize_to_base(self.product.bulk_stock, self.product.bulk_unit)
+            new_available = max(0, available - needed)
+            if self.product.bulk_unit in ['kg', 'l']:
+                self.product.bulk_stock = new_available / 1000
+            else:
+                self.product.bulk_stock = new_available
             self.product.save(update_fields=['bulk_stock'])
         else:
             self.stock = max(0, self.stock - quantity)
@@ -143,8 +149,13 @@ class PriceSlab(models.Model):
 
     def restore_stock(self, quantity=1):
         if self.product.inventory_type == 'bulk':
-            needed_weight = self.quantity_value * quantity
-            self.product.bulk_stock += needed_weight
+            needed = normalize_to_base(self.quantity_value, self.quantity_unit) * quantity
+            available = normalize_to_base(self.product.bulk_stock, self.product.bulk_unit)
+            new_available = available + needed
+            if self.product.bulk_unit in ['kg', 'l']:
+                self.product.bulk_stock = new_available / 1000
+            else:
+                self.product.bulk_stock = new_available
             self.product.save(update_fields=['bulk_stock'])
         else:
             self.stock += quantity
@@ -152,12 +163,20 @@ class PriceSlab(models.Model):
 
     def get_max_available_quantity(self):
         if self.product.inventory_type == 'bulk':
-            if self.quantity_value <= 0:
+            needed = normalize_to_base(self.quantity_value, self.quantity_unit)
+            if needed <= 0:
                 return 0
+            available = normalize_to_base(self.product.bulk_stock, self.product.bulk_unit)
             import math
-            return int(math.floor(self.product.bulk_stock / self.quantity_value))
+            return int(math.floor(available / needed))
         else:
             return self.stock
+
+def normalize_to_base(value, unit):
+    from decimal import Decimal
+    if unit in ['kg', 'l']:
+        return Decimal(value) * 1000
+    return Decimal(value)
 
 class Customer(models.Model):
     phone_number = models.CharField(max_length=15, unique=True)

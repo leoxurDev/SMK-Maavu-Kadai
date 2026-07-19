@@ -34,6 +34,23 @@ def catalog(request):
     }
     return render(request, 'shop/catalog.html', context)
 
+def get_available_product_stock_for_cart(product, cart, exclude_slab_id=None):
+    from shop.models import normalize_to_base
+    if product.inventory_type == 'bulk':
+        total_base_stock = normalize_to_base(product.bulk_stock, product.bulk_unit)
+        base_in_cart = 0
+        for s_id, qty in cart.items():
+            if s_id == exclude_slab_id:
+                continue
+            try:
+                s = PriceSlab.objects.get(id=s_id)
+                if s.product == product:
+                    base_in_cart += normalize_to_base(s.quantity_value, s.quantity_unit) * qty
+            except PriceSlab.DoesNotExist:
+                pass
+        return max(0, total_base_stock - base_in_cart)
+    return None
+
 @require_POST
 def add_to_cart(request):
     slab_id_str = request.POST.get('slab_id')
@@ -47,15 +64,37 @@ def add_to_cart(request):
     # Increment quantity and apply limit check
     quantity = int(request.POST.get('quantity', 1))
     current_qty = cart.get(slab_id_str, 0)
-    max_qty = slab.get_max_available_quantity()
-    if current_qty + quantity > max_qty:
-        cart[slab_id_str] = max_qty
-        request.session['stock_exceeded'] = True
-    elif current_qty + quantity > 10:
-        cart[slab_id_str] = 10
-        request.session['limit_exceeded'] = True
+    
+    if slab.product.inventory_type == 'bulk':
+        from shop.models import normalize_to_base
+        available_base = get_available_product_stock_for_cart(slab.product, cart, exclude_slab_id=slab_id_str)
+        slab_base = normalize_to_base(slab.quantity_value, slab.quantity_unit)
+        
+        if available_base <= 0:
+            cart[slab_id_str] = 0
+            request.session['stock_exceeded'] = True
+        else:
+            needed_base = slab_base * (current_qty + quantity)
+            if needed_base > available_base:
+                import math
+                max_allowed = int(math.floor(available_base / slab_base))
+                cart[slab_id_str] = max_allowed
+                request.session['stock_exceeded'] = True
+            elif current_qty + quantity > 10:
+                cart[slab_id_str] = 10
+                request.session['limit_exceeded'] = True
+            else:
+                cart[slab_id_str] = current_qty + quantity
     else:
-        cart[slab_id_str] = current_qty + quantity
+        max_qty = slab.get_max_available_quantity()
+        if current_qty + quantity > max_qty:
+            cart[slab_id_str] = max_qty
+            request.session['stock_exceeded'] = True
+        elif current_qty + quantity > 10:
+            cart[slab_id_str] = 10
+            request.session['limit_exceeded'] = True
+        else:
+            cart[slab_id_str] = current_qty + quantity
     save_cart(request, cart)
     
     # If HTMX request, return the cart drawer snippet and trigger a badge update
@@ -76,16 +115,29 @@ def update_cart_quantity(request):
         
     cart = get_cart(request)
     slab = get_object_or_404(PriceSlab, id=slab_id_str)
-    max_qty = slab.get_max_available_quantity()
     
     if slab_id_str in cart:
         if action == 'increment':
-            if cart[slab_id_str] >= max_qty:
-                request.session['stock_exceeded'] = True
-            elif cart[slab_id_str] >= 10:
-                request.session['limit_exceeded'] = True
+            if slab.product.inventory_type == 'bulk':
+                from shop.models import normalize_to_base
+                available_base = get_available_product_stock_for_cart(slab.product, cart, exclude_slab_id=slab_id_str)
+                slab_base = normalize_to_base(slab.quantity_value, slab.quantity_unit)
+                needed_base = slab_base * (cart[slab_id_str] + 1)
+                
+                if needed_base > available_base:
+                    request.session['stock_exceeded'] = True
+                elif cart[slab_id_str] >= 10:
+                    request.session['limit_exceeded'] = True
+                else:
+                    cart[slab_id_str] += 1
             else:
-                cart[slab_id_str] += 1
+                max_qty = slab.get_max_available_quantity()
+                if cart[slab_id_str] >= max_qty:
+                    request.session['stock_exceeded'] = True
+                elif cart[slab_id_str] >= 10:
+                    request.session['limit_exceeded'] = True
+                else:
+                    cart[slab_id_str] += 1
         elif action == 'decrement':
             if cart[slab_id_str] <= 1:
                 cart.pop(slab_id_str)
@@ -283,11 +335,31 @@ def checkout(request):
                     pass
             
         # Verify stock availability for all items before placing the order
+        # For bulk products, we must aggregate the total base weight across all slabs of the product in the cart
+        product_base_totals = {}
         for item in cart_data['cart_items']:
-            if not item['slab'].is_in_stock(item['quantity']):
-                max_avail = item['slab'].get_max_available_quantity()
+            prod = item['product']
+            slab = item['slab']
+            qty = item['quantity']
+            
+            if prod.inventory_type == 'bulk':
+                from shop.models import normalize_to_base
+                base_qty = normalize_to_base(slab.quantity_value, slab.quantity_unit) * qty
+                product_base_totals[prod.id] = product_base_totals.get(prod.id, 0) + base_qty
+            else:
+                if not slab.is_in_stock(qty):
+                    return render(request, 'shop/checkout.html', {
+                        'error': f"Sorry, {prod.name_en} ({slab.quantity_value} {slab.get_quantity_unit_display()}) does not have enough inventory. Only {slab.stock} units left.",
+                        **cart_data
+                    })
+                    
+        for prod_id, total_base_needed in product_base_totals.items():
+            prod = Product.objects.get(id=prod_id)
+            from shop.models import normalize_to_base
+            total_base_stock = normalize_to_base(prod.bulk_stock, prod.bulk_unit)
+            if total_base_needed > total_base_stock:
                 return render(request, 'shop/checkout.html', {
-                    'error': f"Sorry, {item['product'].name_en} ({item['slab'].quantity_value} {item['slab'].get_quantity_unit_display()}) does not have enough inventory. Only {max_avail} units left.",
+                    'error': f"Sorry, {prod.name_en} does not have enough inventory for all items in your cart. Available stock: {prod.bulk_stock} {prod.bulk_unit}.",
                     **cart_data
                 })
 
