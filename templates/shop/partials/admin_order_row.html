@@ -10,10 +10,26 @@
             {{ order.get_order_type_display }}
         </span>
     </td>
-    <td style="padding: 0.8rem 1rem; font-size: 0.8rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{% for item in order.items.all %}{{ item.quantity }}x {{ item.product.name_en }} ({{ item.price_slab.quantity_value }}{{ item.price_slab.quantity_unit }}){% if not forloop.last %}, {% endif %}{% endfor %}">
-        {% for item in order.items.all %}
-            {{ item.quantity }}x {{ item.product.name_en }}{% if not forloop.last %}, {% endif %}
-        {% endfor %}
+    <td style="padding: 0.8rem 1rem; font-size: 0.8rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; color: var(--accent-color); font-weight: 500; transition: color 0.2s;" 
+        title="Click to view full list"
+        @click="activeItemsOrder = {
+            id: {{ order.id }},
+            items: [
+                {% for item in order.items.all %}
+                {
+                    quantity: {{ item.quantity }},
+                    name: '{{ item.product.name_en|escapejs }}',
+                    weight: '{{ item.price_slab.quantity_value }}{{ item.price_slab.quantity_unit|escapejs }}',
+                    subtotal: '{{ item.subtotal|floatformat:2 }}'
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        }">
+        <span style="border-bottom: 1px dashed var(--accent-color); padding-bottom: 1px;">
+            {% for item in order.items.all %}
+                {{ item.quantity }}x {{ item.product.name_en }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        </span>
     </td>
     <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">₹{{ order.total_amount|floatformat:2 }}</td>
     <td style="padding: 0.8rem 1rem;">
