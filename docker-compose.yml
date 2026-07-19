@@ -88,6 +88,15 @@ services:
     depends_on:
       - web
 
+  adminer:
+    image: adminer:latest
+    container_name: smk_adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
 volumes:
   mysql_data:
   django_static:

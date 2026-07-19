@@ -153,3 +153,20 @@ To obtain a free SSL certificate for `yourdomain.com`:
   ```bash
   docker compose down
   ```
+
+---
+
+## Step 8: Database Administration (UI DB Viewer)
+We have integrated **Adminer** (a lightweight database administration interface) into the docker compose environment:
+* **Access URL**: `http://yourdomain.com:8080` (or `http://your-ec2-public-ip:8080`)
+* **Login Information to connect**:
+  * **System**: `MySQL`
+  * **Server**: `db`
+  * **Username**: `smk_user` (or the `DB_USER` set in your `.env`)
+  * **Password**: `smk_password` (or the `DB_PASSWORD` set in your `.env`)
+  * **Database**: `smk_flour_shop` (or the `DB_NAME` set in your `.env`)
+
+> [!TIP]
+> For security, you can stop/start the Adminer service on demand so the database port `8080` is not left open publicly:
+> - **Stop Adminer**: `docker compose stop adminer`
+> - **Start Adminer**: `docker compose start adminer`
