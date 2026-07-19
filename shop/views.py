@@ -638,11 +638,13 @@ def send_sms_otp(phone_number, otp):
             return False
             
         raw_10_digits = phone_number[-10:]
+        message = f"Your SMK Flour Shop verification code is {otp}."
         params = urllib.parse.urlencode({
             'authorization': api_key,
-            'variables_values': otp,
-            'route': 'otp',
-            'numbers': raw_10_digits
+            'route': 'q',
+            'message': message,
+            'numbers': raw_10_digits,
+            'language': 'english'
         })
         url = f"https://www.fast2sms.com/dev/bulkV2?{params}"
         
