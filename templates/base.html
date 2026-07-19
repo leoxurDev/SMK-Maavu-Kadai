@@ -76,6 +76,7 @@
             errDiv.innerHTML = '<strong>HTMX Swap Error:</strong> Target ID: ' + (event.detail.target ? event.detail.target.id : 'unknown');
             document.body.appendChild(errDiv);
         });
+
     </script>
 </head>
 <body x-data="{ cartOpen: false, lang: localStorage.getItem('lang') || 'both' }" class="light" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
@@ -126,7 +127,7 @@
                         hx-target="#cart-drawer-target"
                         aria-label="Open Cart">
                     <i class="fa-solid fa-shopping-bag fa-lg"></i>
-                    <div id="cart-badge-container" hx-get="{% url 'cart_badge' %}" hx-trigger="load, cartUpdated from:body">
+                    <div id="cart-badge-container" hx-get="{% url 'cart_badge' %}" hx-trigger="load, cartUpdated from:body" hx-target="this">
                         {% include 'shop/partials/cart_badge.html' %}
                     </div>
                 </button>
@@ -154,18 +155,11 @@
     <!-- Slide-over Cart Drawer -->
     <div class="drawer-backdrop" 
          x-show="cartOpen" 
-         x-transition:opacity
          @click.away="cartOpen = false" 
          style="display: none;">
         
         <div class="drawer-container" 
-             x-show="cartOpen" 
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="transform translate-x-full"
-             x-transition:enter-end="transform translate-x-0"
-             x-transition:leave="transition ease-in duration-200"
-             x-transition:leave-start="transform translate-x-0"
-             x-transition:leave-end="transform translate-x-full">
+             x-show="cartOpen">
             
             <div class="drawer-header">
                 <div class="drawer-title">

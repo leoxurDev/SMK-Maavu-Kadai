@@ -379,7 +379,11 @@
         const shopLat = 10.987270;
         const shopLng = 76.939040;
         
-        // Initialize map
+        // Initialize map safely by clearing any previous leaflet internal state
+        var mapContainer = L.DomUtil.get('checkout-map');
+        if (mapContainer !== null) {
+            mapContainer._leaflet_id = null;
+        }
         const map = L.map('checkout-map').setView([shopLat, shopLng], 14);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
