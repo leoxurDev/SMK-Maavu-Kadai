@@ -1,5 +1,10 @@
 <tr id="order-row-{{ order.id }}" style="border-bottom: 1px solid var(--border-color);">
-    <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ order.id }}</td>
+    <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">
+        #{{ order.id }}
+        <a href="{% url 'download_invoice' order.id %}" title="Download Invoice Receipt" style="margin-left: 0.4rem; color: var(--terracotta); font-size: 0.85rem;">
+            <i class="fa-solid fa-file-pdf"></i>
+        </a>
+    </td>
     <td style="padding: 0.8rem 1rem;">
         <div style="font-weight: 600;">{{ order.customer.name }}</div>
         <div style="font-size: 0.75rem; color: #887B75;">{{ order.customer.phone_number }}</div>

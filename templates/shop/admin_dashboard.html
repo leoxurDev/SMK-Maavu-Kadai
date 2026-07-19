@@ -14,6 +14,7 @@
     <!-- JS dependencies -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         .dash-container {
@@ -429,6 +430,39 @@
                 </table>
             </div>
 
+            <!-- Charts Grid Layout -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                <!-- 1. Daily Sales Trend Line Chart -->
+                <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; box-shadow: var(--shadow-sm);">
+                    <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-chart-line" style="color: var(--banana-leaf);"></i> Daily Revenue (Past 7 Days)
+                    </h3>
+                    <div style="position: relative; height: 230px; width: 100%;">
+                        <canvas id="salesTrendsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 2. Hourly Order Velocity Bar Chart -->
+                <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; box-shadow: var(--shadow-sm);">
+                    <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-clock" style="color: var(--terracotta);"></i> Order Velocity (Today by Hour)
+                    </h3>
+                    <div style="position: relative; height: 230px; width: 100%;">
+                        <canvas id="hourlyVelocityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 3. Product Sales Doughnut Chart -->
+                <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; box-shadow: var(--shadow-sm);">
+                    <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-chart-pie" style="color: var(--warning-color);"></i> Product Distribution (Top 5)
+                    </h3>
+                    <div style="position: relative; height: 230px; width: 100%;">
+                        <canvas id="productShareChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- TAB 4: ACTIVE DELIVERIES MAPS -->
@@ -571,5 +605,125 @@
 
     </div>
 
+    <!-- Chart.js Initializer -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var salesTrendLabels = {{ sales_trend_labels_json|safe }};
+            var salesTrendValues = {{ sales_trend_values_json|safe }};
+            var hourlyLabels = {{ hourly_labels_json|safe }};
+            var hourlyValues = {{ hourly_values_json|safe }};
+            var topProductsLabels = {{ top_products_labels_json|safe }};
+            var topProductsValues = {{ top_products_values_json|safe }};
+
+            // 1. Daily Revenue Chart
+            var salesCtx = document.getElementById('salesTrendsChart').getContext('2d');
+            new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: salesTrendLabels,
+                    datasets: [{
+                        label: 'Revenue (Rs.)',
+                        data: salesTrendValues,
+                        borderColor: '#2e7d32',
+                        backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#2e7d32',
+                        pointHoverRadius: 6,
+                        tension: 0.35,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // 2. Hourly Velocity Chart
+            var hourlyCtx = document.getElementById('hourlyVelocityChart').getContext('2d');
+            new Chart(hourlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: hourlyLabels,
+                    datasets: [{
+                        label: 'Orders',
+                        data: hourlyValues,
+                        backgroundColor: '#d85c38',
+                        borderRadius: 5,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return index % 3 === 0 ? this.getLabelForValue(value) : '';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 3. Product Distribution Chart
+            var shareCtx = document.getElementById('productShareChart').getContext('2d');
+            new Chart(shareCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: topProductsLabels,
+                    datasets: [{
+                        data: topProductsValues,
+                        backgroundColor: [
+                            '#2e7d32',
+                            '#d85c38',
+                            '#f5b041',
+                            '#5dade2',
+                            '#a569bd'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 9 }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        });
+    </script>
 </body>
 </html>

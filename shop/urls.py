@@ -13,6 +13,7 @@ urlpatterns = [
     path('checkout/calculate-delivery/', views.calculate_delivery, name='calculate_delivery'),
     path('order/<int:order_id>/', views.order_tracking, name='order_tracking'),
     path('order/<int:order_id>/status-api/', views.order_status_api, name='order_status_api'),
+    path('order/<int:order_id>/invoice/', views.download_invoice, name='download_invoice'),
     path('payment/verify/', views.verify_payment, name='verify_payment'),
     path('payment/webhook/', views.razorpay_webhook, name='razorpay_webhook'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),

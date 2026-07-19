@@ -208,6 +208,15 @@
                 </div>
             </div>
 
+            <!-- Invoice Download Button -->
+            <div style="margin-top: 1.25rem;">
+                <a href="{% url 'download_invoice' order.id %}" class="btn-primary" style="background-color: var(--dark-brown); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none; height: 42px; border-radius: 12px; font-weight: 600; font-size: 0.9rem; box-shadow: var(--shadow-sm); transition: var(--transition-smooth);">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span x-show="lang === 'en' || lang === 'both'">Download Receipt (PDF)</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 4px;' : ''">ரசீது பதிவிறக்கம் (PDF)</span>
+                </a>
+            </div>
+
         </div>
     </div>
 </div>

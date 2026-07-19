@@ -533,6 +533,54 @@ def admin_dashboard(request):
     ).annotate(
         total_qty=Sum('quantity')
     ).order_by('-total_qty')[:5]
+
+    import json
+    from django.db.models.functions import TruncDate, ExtractHour
+    from django.db.models import Count
+    
+    # 7-day Daily Sales Trend
+    seven_days_ago = today - timezone.timedelta(days=6)
+    sales_trend_qs = Payment.objects.filter(
+        created_at__date__gte=seven_days_ago,
+        status='completed'
+    ).annotate(date=TruncDate('created_at')).values('date').annotate(
+        total=Sum('amount')
+    ).order_by('date')
+    
+    # Pre-fill all 7 days with 0.0 to ensure continuous line chart
+    sales_trend_dict = { (today - timezone.timedelta(days=i)): 0.0 for i in range(7) }
+    for item in sales_trend_qs:
+        if item['date'] in sales_trend_dict:
+            sales_trend_dict[item['date']] = float(item['total'])
+    
+    sorted_trend_dates = sorted(sales_trend_dict.keys())
+    sales_trend_labels = [d.strftime('%b %d') for d in sorted_trend_dates]
+    sales_trend_values = [sales_trend_dict[d] for d in sorted_trend_dates]
+    
+    # Hourly Velocity (Today)
+    hourly_qs = Order.objects.filter(
+        created_at__date=today
+    ).annotate(hour=ExtractHour('created_at')).values('hour').annotate(
+        count=Count('id')
+    ).order_by('hour')
+    
+    hourly_dict = { h: 0 for h in range(24) }
+    for item in hourly_qs:
+        hourly_dict[item['hour']] = item['count']
+        
+    hourly_labels = [f"{h:02d}:00" for h in range(24)]
+    hourly_values = [hourly_dict[h] for h in range(24)]
+    
+    # Top Products
+    top_products_labels = [item['product__name_en'] for item in top_products]
+    top_products_values = [int(item['total_qty']) for item in top_products]
+    
+    sales_trend_labels_json = json.dumps(sales_trend_labels)
+    sales_trend_values_json = json.dumps(sales_trend_values)
+    hourly_labels_json = json.dumps(hourly_labels)
+    hourly_values_json = json.dumps(hourly_values)
+    top_products_labels_json = json.dumps(top_products_labels)
+    top_products_values_json = json.dumps(top_products_values)
     
     # 2. Live Orders List with Filters
     orders = Order.objects.select_related('customer', 'address').prefetch_related('items', 'items__product').all()
@@ -577,6 +625,12 @@ def admin_dashboard(request):
         'active_deliveries': active_deliveries,
         'status_choices': Order.STATUS_CHOICES,
         'max_order_id': max_order_id,
+        'sales_trend_labels_json': sales_trend_labels_json,
+        'sales_trend_values_json': sales_trend_values_json,
+        'hourly_labels_json': hourly_labels_json,
+        'hourly_values_json': hourly_values_json,
+        'top_products_labels_json': top_products_labels_json,
+        'top_products_values_json': top_products_values_json,
     }
     
     return render(request, 'shop/admin_dashboard.html', context)
@@ -821,3 +875,223 @@ def admin_order_notification(request):
             'new_max_id': max_order_id,
             'new_order': False
         })
+
+from io import BytesIO
+from django.http import FileResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+
+def download_invoice(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    items = order.items.select_related('product', 'price_slab').all()
+    
+    # Check authorization: either staff, or the customer who placed the order
+    is_staff = request.user.is_staff
+    is_owner = False
+    customer_id = request.session.get('customer_id')
+    if customer_id and order.customer_id == customer_id:
+        is_owner = True
+        
+    if not (is_staff or is_owner):
+        return HttpResponse("Unauthorized to view this invoice", status=403)
+        
+    # Create the PDF buffer
+    buffer = BytesIO()
+    
+    # Setup document template
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=40
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    # Custom Styles matching the clean/premium aesthetic
+    body_bold = ParagraphStyle(
+        'BodyBold',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=9,
+        leading=12,
+        textColor=colors.HexColor('#1d1d1f')
+    )
+    
+    body_style = ParagraphStyle(
+        'BodyNormal',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=9,
+        leading=12,
+        textColor=colors.HexColor('#1d1d1f')
+    )
+    
+    right_align = ParagraphStyle(
+        'RightAlign',
+        parent=body_style,
+        alignment=2 # Right align
+    )
+    
+    right_align_bold = ParagraphStyle(
+        'RightAlignBold',
+        parent=body_bold,
+        alignment=2
+    )
+
+    story = []
+    
+    # 1. Header Information (Two Column layout: Company Details vs Invoice Details)
+    company_info = """
+    <b>SMK Flour Shop</b><br/>
+    Opposite Rani Hospital,<br/>
+    Selvapuram, Coimbatore - 641026<br/>
+    Phone: +91 7397536217
+    """
+    
+    invoice_details = f"""
+    <b>INVOICE RECEIPT</b><br/><br/>
+    <b>Invoice No:</b> #{order.id}<br/>
+    <b>Date:</b> {order.created_at.strftime('%d-%b-%Y %I:%M %p')}<br/>
+    <b>Order Type:</b> {order.get_order_type_display()}<br/>
+    <b>Status:</b> {order.get_status_display().upper()}<br/>
+    """
+    
+    header_data = [
+        [Paragraph(company_info, body_style), Paragraph(invoice_details, right_align)]
+    ]
+    
+    header_table = Table(header_data, colWidths=[3.5*inch, 3.5*inch])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('PADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(header_table)
+    story.append(Spacer(1, 15))
+    
+    # Horizontal line
+    line_table = Table([['']], colWidths=[7.0*inch])
+    line_table.setStyle(TableStyle([
+        ('LINEBELOW', (0,0), (-1,-1), 1, colors.HexColor('#e8e8ed')),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(line_table)
+    story.append(Spacer(1, 15))
+    
+    # 2. Customer details & Address
+    cust_name = order.customer.name if order.customer.name else 'Valued Customer'
+    cust_info = f"""
+    <b>Bill To:</b><br/>
+    {cust_name}<br/>
+    Phone: {order.customer.phone_number}
+    """
+    
+    address_info = "<b>Delivery Address:</b><br/>Store Pickup"
+    if order.order_type == 'delivery' and order.address:
+        address_info = f"""
+        <b>Delivery Address:</b><br/>
+        {order.address.address_text}<br/>
+        Landmark: {order.address.landmark or 'N/A'}
+        """
+        
+    cust_table_data = [
+        [Paragraph(cust_info, body_style), Paragraph(address_info, body_style)]
+    ]
+    cust_table = Table(cust_table_data, colWidths=[3.5*inch, 3.5*inch])
+    cust_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('PADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(cust_table)
+    story.append(Spacer(1, 20))
+    
+    # 3. Items Table
+    table_data = [
+        [
+            Paragraph('<b>Product Description</b>', body_bold),
+            Paragraph('<b>Slab Size</b>', body_bold),
+            Paragraph('<b>Price</b>', right_align_bold),
+            Paragraph('<b>Qty</b>', right_align_bold),
+            Paragraph('<b>Total</b>', right_align_bold)
+        ]
+    ]
+    
+    for item in items:
+        table_data.append([
+            Paragraph(item.product.name_en, body_style),
+            Paragraph(f"{item.price_slab.quantity_value} {item.price_slab.get_quantity_unit_display()}", body_style),
+            Paragraph(f"Rs. {item.price_slab.price:.2f}", right_align),
+            Paragraph(str(item.quantity), right_align),
+            Paragraph(f"Rs. {item.subtotal:.2f}", right_align)
+        ])
+        
+    items_table = Table(table_data, colWidths=[2.6*inch, 1.2*inch, 1.1*inch, 0.8*inch, 1.3*inch])
+    items_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f5f5f7')),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('LINEBELOW', (0,0), (-1,-1), 0.5, colors.HexColor('#e8e8ed')),
+        ('LINEBELOW', (0,0), (-1,0), 1.5, colors.HexColor('#1d1d1f')),
+    ]))
+    story.append(items_table)
+    story.append(Spacer(1, 15))
+    
+    # 4. Summary & Payments Table
+    subtotal = float(order.total_amount) - float(order.delivery_fee)
+    summary_rows = [
+        [Paragraph('<b>Items Subtotal:</b>', right_align), Paragraph(f"Rs. {subtotal:.2f}", right_align)],
+        [Paragraph('<b>Delivery Fee:</b>', right_align), Paragraph(f"Rs. {order.delivery_fee:.2f}", right_align)],
+        [Paragraph('<b>Grand Total:</b>', right_align_bold), Paragraph(f"Rs. {order.total_amount:.2f}", right_align_bold)]
+    ]
+    
+    summary_table = Table(summary_rows, colWidths=[5.5*inch, 1.5*inch])
+    summary_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('PADDING', (0,0), (-1,-1), 4),
+        ('LINEABOVE', (0,-1), (-1,-1), 1, colors.HexColor('#1d1d1f')),
+    ]))
+    story.append(summary_table)
+    story.append(Spacer(1, 30))
+    
+    # 5. Payment details & Footer Thank You
+    try:
+        payment = order.payment
+        pay_method = 'Online Payment' if payment.method == 'online' else 'Cash on Delivery'
+        pay_status = payment.status.upper()
+    except Exception:
+        pay_method = 'N/A'
+        pay_status = 'PENDING'
+        
+    pay_info = f"""
+    <b>Payment Method:</b> {pay_method}<br/>
+    <b>Payment Status:</b> <font color="{'green' if pay_status == 'COMPLETED' else 'red'}">{pay_status}</font>
+    """
+    
+    thank_you_text = """
+    <b>Thank you for your order!</b><br/>
+    We appreciate your business. Batter fresh, eat fresh!
+    """
+    
+    footer_data = [
+        [Paragraph(pay_info, body_style), Paragraph(thank_you_text, right_align)]
+    ]
+    footer_table = Table(footer_data, colWidths=[3.5*inch, 3.5*inch])
+    footer_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('PADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(footer_table)
+    
+    # Build document
+    doc.build(story)
+    
+    # Get the value of the BytesIO buffer and write it to the response.
+    buffer.seek(0)
+    return FileResponse(buffer, as_attachment=True, filename=f"invoice_order_{order.id}.pdf")

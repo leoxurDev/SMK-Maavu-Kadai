@@ -98,8 +98,11 @@
                                 </span>
                             </div>
                             
-                            <div style="display: flex; align-items: center; gap: 0.8rem;">
-                                <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">₹{{ order.total_amount|floatformat:2 }}</div>
+                            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                                <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-right: 0.2rem;">₹{{ order.total_amount|floatformat:2 }}</div>
+                                <a href="{% url 'download_invoice' order.id %}" class="header-nav-btn" style="padding: 0.4rem 0.6rem; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 1px solid var(--border-color);" title="Download Invoice PDF">
+                                    <i class="fa-solid fa-file-pdf" style="color: var(--terracotta); font-size: 1.05rem;"></i>
+                                </a>
                                 <a href="{% url 'order_tracking' order.id %}" class="btn-primary" style="width: auto; padding: 0.4rem 1rem; border-radius: 12px; text-decoration: none;">
                                     <i class="fa-solid fa-magnifying-glass-location"></i>
                                     <span x-show="lang === 'en' || lang === 'both'">Track / Pay</span>
