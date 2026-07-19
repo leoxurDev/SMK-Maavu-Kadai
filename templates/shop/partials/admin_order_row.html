@@ -14,6 +14,23 @@
             {% if order.order_type == 'pickup' %}color: var(--terracotta);{% else %}color: var(--banana-leaf);{% endif %}">
             {{ order.get_order_type_display }}
         </span>
+        {% if order.order_type == 'delivery' %}
+            <div style="margin-top: 0.4rem;">
+                <select name="agent_id" 
+                        hx-post="{% url 'admin_assign_delivery' %}"
+                        hx-vals='{"order_id": "{{ order.id }}"}'
+                        hx-target="#order-row-{{ order.id }}"
+                        hx-swap="outerHTML"
+                        style="height: 26px; border: 1px solid var(--border-color); border-radius: 4px; padding: 0 0.2rem; font-size: 0.7rem; font-weight: 600; outline: none; background-color: var(--bg-card); cursor: pointer; max-width: 110px;">
+                    <option value="">Unassigned</option>
+                    {% for agent in delivery_staff %}
+                        <option value="{{ agent.id }}" {% if order.assigned_delivery_id == agent.id %}selected{% endif %}>
+                            {{ agent.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
     </td>
     <td style="padding: 0.8rem 1rem; font-size: 0.8rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; color: var(--accent-color); font-weight: 500; transition: color 0.2s;" 
         title="Click to view full list"

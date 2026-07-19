@@ -613,6 +613,11 @@ def admin_dashboard(request):
         status__in=['received', 'preparing', 'ready']
     ).select_related('customer', 'address').order_by('created_at')
 
+    from django.contrib.auth.models import User
+    delivery_staff = User.objects.filter(
+        Q(groups__name='Delivery Staff') | Q(is_staff=True)
+    ).distinct().order_by('username')
+
     from django.db.models import Max
     max_order_id = Order.objects.aggregate(max_id=Max('id'))['max_id'] or 0
 
@@ -631,6 +636,7 @@ def admin_dashboard(request):
         'hourly_values_json': hourly_values_json,
         'top_products_labels_json': top_products_labels_json,
         'top_products_values_json': top_products_values_json,
+        'delivery_staff': delivery_staff,
     }
     
     return render(request, 'shop/admin_dashboard.html', context)
@@ -1095,3 +1101,122 @@ def download_invoice(request, order_id):
     # Get the value of the BytesIO buffer and write it to the response.
     buffer.seek(0)
     return FileResponse(buffer, as_attachment=True, filename=f"invoice_order_{order.id}.pdf")
+
+from django.contrib.auth import login as auth_login, authenticate
+from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import PermissionDenied
+
+def delivery_required(view_func):
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('delivery_login')
+        # Check if user is staff, superuser, or in Delivery Staff group
+        in_group = request.user.groups.filter(name='Delivery Staff').exists()
+        if request.user.is_staff or request.user.is_superuser or in_group:
+            return view_func(request, *args, **kwargs)
+        raise PermissionDenied("You do not have access to the delivery dashboard.")
+    return _wrapped_view
+
+def delivery_login(request):
+    if request.user.is_authenticated:
+        in_group = request.user.groups.filter(name='Delivery Staff').exists()
+        if request.user.is_staff or request.user.is_superuser or in_group:
+            return redirect('delivery_dashboard')
+            
+    error_msg = None
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            in_group = user.groups.filter(name='Delivery Staff').exists()
+            if user.is_staff or user.is_superuser or in_group:
+                auth_login(request, user)
+                return redirect('delivery_dashboard')
+            else:
+                error_msg = "Your account is not registered as delivery staff."
+        else:
+            error_msg = "Invalid username or password."
+    else:
+        form = AuthenticationForm()
+        
+    return render(request, 'shop/delivery_login.html', {
+        'form': form,
+        'error_msg': error_msg
+    })
+
+@delivery_required
+def delivery_dashboard(request):
+    # Assigned deliveries (status ready, preparing, received)
+    assigned_orders = Order.objects.filter(
+        assigned_delivery=request.user,
+        order_type='delivery',
+        status__in=['received', 'preparing', 'ready']
+    ).select_related('customer', 'address', 'payment').order_by('-created_at')
+    
+    # Completed deliveries (past deliveries)
+    completed_orders = Order.objects.filter(
+        assigned_delivery=request.user,
+        order_type='delivery',
+        status='completed'
+    ).select_related('customer', 'address', 'payment').order_by('-updated_at')[:20]
+    
+    return render(request, 'shop/delivery_dashboard.html', {
+        'assigned_orders': assigned_orders,
+        'completed_orders': completed_orders
+    })
+
+@delivery_required
+@require_POST
+def delivery_mark_completed(request):
+    order_id = request.POST.get('order_id')
+    order = get_object_or_404(Order, id=order_id, assigned_delivery=request.user)
+    
+    # Mark order status completed
+    order.status = 'completed'
+    order.save()
+    
+    # If payment is COD, mark payment status completed
+    try:
+        payment = order.payment
+        if payment.method == 'cod' and payment.status != 'completed':
+            payment.status = 'completed'
+            payment.paid_at = timezone.now()
+            payment.save()
+    except Payment.DoesNotExist:
+        pass
+        
+    if request.htmx:
+        response = HttpResponse("")
+        response['HX-Trigger'] = 'deliveryStatusUpdated'
+        return response
+        
+    return redirect('delivery_dashboard')
+
+@staff_member_required
+@require_POST
+def admin_assign_delivery(request):
+    order_id = request.POST.get('order_id')
+    agent_id = request.POST.get('agent_id')
+    order = get_object_or_404(Order, id=order_id)
+    
+    if agent_id:
+        agent = get_object_or_404(User, id=agent_id)
+        order.assigned_delivery = agent
+    else:
+        order.assigned_delivery = None
+    order.save()
+    
+    if request.htmx:
+        # Render the updated order row snippet
+        from django.contrib.auth.models import User
+        delivery_staff = User.objects.filter(
+            Q(groups__name='Delivery Staff') | Q(is_staff=True)
+        ).distinct().order_by('username')
+        
+        return render(request, 'shop/partials/admin_order_row.html', {
+            'order': order,
+            'status_choices': Order.STATUS_CHOICES,
+            'delivery_staff': delivery_staff
+        })
+        
+    return redirect('admin_dashboard')

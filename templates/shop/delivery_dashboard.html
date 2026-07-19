@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}SMK Flour Shop - Delivery Staff Dashboard{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 1.5rem auto; padding: 0 1rem; box-sizing: border-box;"
+     x-data="{ activeTab: 'pending' }">
+     
+    <!-- Header Area -->
+    <div style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.2rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
+        <div>
+            <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Delivery Agent</span>
+            <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0;">{{ request.user.username }}</h2>
+        </div>
+        <a href="{% url 'customer_logout' %}" class="header-nav-btn" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border: 1px solid var(--border-color); border-radius: 12px; display: inline-flex; align-items: center; gap: 0.25rem; text-decoration: none;">
+            <i class="fa-solid fa-right-from-bracket" style="color: var(--danger-color);"></i> Log Out
+        </a>
+    </div>
+
+    <!-- Dashboard Tabs -->
+    <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.25rem;">
+        <button class="dash-tab-btn" :class="activeTab === 'pending' ? 'active' : ''" @click="activeTab = 'pending'" style="flex: 1;">
+            <i class="fa-solid fa-truck-fast"></i> Assigned ({% if assigned_orders %}{{ assigned_orders.count }}{% else %}0{% endif %})
+        </button>
+        <button class="dash-tab-btn" :class="activeTab === 'completed' ? 'active' : ''" @click="activeTab = 'completed'" style="flex: 1;">
+            <i class="fa-solid fa-circle-check"></i> Completed ({{ completed_orders.count }})
+        </button>
+    </div>
+
+    <!-- TAB 1: ASSIGNED / PENDING DELIVERIES -->
+    <div x-show="activeTab === 'pending'" id="pending-deliveries" 
+         hx-get="{% url 'delivery_dashboard' %}"
+         hx-trigger="deliveryStatusUpdated from:body"
+         hx-select="#pending-deliveries"
+         hx-swap="outerHTML">
+         
+        {% if assigned_orders %}
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                {% for order in assigned_orders %}
+                    <div style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-md);">
+                        <!-- Card Header -->
+                        <div style="background-color: var(--input-bg); border-bottom: 1px solid var(--border-color); padding: 0.8rem 1.2rem; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">Order #{{ order.id }}</span>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">{{ order.created_at|date:"d M, h:i A" }}</span>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div style="padding: 1.2rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                            <!-- Customer Contact -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.6rem;">
+                                <div>
+                                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">{{ order.customer.name }}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.1rem;">{{ order.customer.phone_number }}</div>
+                                </div>
+                                <a href="tel:{{ order.customer.phone_number }}" class="btn-primary" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: var(--banana-leaf); text-decoration: none; box-shadow: var(--shadow-sm);">
+                                    <i class="fa-solid fa-phone"></i>
+                                </a>
+                            </div>
+
+                            <!-- Delivery Address -->
+                            <div>
+                                <span style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); display: block; margin-bottom: 0.2rem;">Delivery Address</span>
+                                <span style="font-size: 0.85rem; color: var(--text-primary); display: block; line-height: 1.4;">{{ order.address.address_text }}</span>
+                                {% if order.address.landmark %}
+                                    <span style="font-size: 0.75rem; color: #887B75; display: block; margin-top: 0.2rem;">
+                                        <strong>Landmark:</strong> {{ order.address.landmark }}
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Map Navigation -->
+                            {% if order.address.latitude and order.address.longitude %}
+                                <a href="https://www.google.com/maps/search/?api=1&query={{ order.address.latitude }},{{ order.address.longitude }}" 
+                                   target="_blank" 
+                                   class="header-nav-btn" 
+                                   style="padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; justify-content: center; text-decoration: none; border: 1px solid var(--border-color); background-color: var(--bg-card);">
+                                    <i class="fa-solid fa-map-location-dot" style="color: var(--banana-leaf);"></i> Open Google Maps Route
+                                </a>
+                            {% endif %}
+
+                            <!-- Items Summary -->
+                            <div style="background-color: var(--input-bg); border-radius: 8px; padding: 0.6rem 0.8rem; font-size: 0.8rem; color: var(--text-secondary);">
+                                <strong style="color: var(--text-primary); display: block; margin-bottom: 0.2rem;">Items to Deliver:</strong>
+                                {% for item in order.items.all %}
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.15rem;">
+                                        <span>{{ item.quantity }}x {{ item.product.name_en }} ({{ item.price_slab.quantity_value }}{{ item.price_slab.quantity_unit }})</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Cash collection message -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
+                                {% if order.payment.method == 'cod' %}background-color: rgba(216,92,56,0.1); color: var(--terracotta);
+                                {% else %}background-color: rgba(46,125,50,0.1); color: var(--success-color);
+                                {% endif %}">
+                                <span>
+                                    {% if order.payment.method == 'cod' %}
+                                        <i class="fa-solid fa-hand-holding-dollar"></i> Collect Cash
+                                    {% else %}
+                                        <i class="fa-solid fa-circle-check"></i> Already Paid Online
+                                    {% endif %}
+                                </span>
+                                <span>₹{{ order.total_amount|floatformat:2 }}</span>
+                            </div>
+
+                            <!-- Action Complete Button -->
+                            <button hx-post="{% url 'delivery_mark_completed' %}"
+                                    hx-vals='{"order_id": "{{ order.id }}"}'
+                                    hx-swap="none"
+                                    class="btn-primary" 
+                                    style="height: 44px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-top: 0.4rem; background-color: var(--banana-leaf); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; width: 100%;">
+                                <i class="fa-solid fa-circle-check"></i> Mark as Delivered
+                            </button>
+
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 3rem 1rem; text-align: center;">
+                <i class="fa-solid fa-motorcycle" style="font-size: 3rem; color: var(--border-color); margin-bottom: 1rem;"></i>
+                <h4 style="font-size: 1rem; color: var(--text-primary); font-weight: 700;">No pending deliveries</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.3rem;">You have delivered all assigned orders or haven't been assigned any yet.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- TAB 2: COMPLETED DELIVERIES -->
+    <div x-show="activeTab === 'completed'" id="completed-deliveries"
+         hx-get="{% url 'delivery_dashboard' %}"
+         hx-trigger="deliveryStatusUpdated from:body"
+         hx-select="#completed-deliveries"
+         hx-swap="outerHTML"
+         style="display: none;">
+         
+        {% if completed_orders %}
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for order in completed_orders %}
+                    <div style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm); opacity: 0.85;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary);">Order #{{ order.id }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem;">To: {{ order.customer.name }}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.1rem;">Delivered at: {{ order.updated_at|date:"d M, h:i A" }}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 700; color: var(--success-color); font-size: 0.9rem;">₹{{ order.total_amount|floatformat:2 }}</div>
+                            <span style="font-size: 0.65rem; background-color: rgba(46,125,50,0.1); color: var(--success-color); padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700; display: inline-block; margin-top: 0.2rem;">DELIVERED</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 3rem 1rem; text-align: center;">
+                <i class="fa-solid fa-list-check" style="font-size: 3rem; color: var(--border-color); margin-bottom: 1rem;"></i>
+                <h4 style="font-size: 1rem; color: var(--text-primary); font-weight: 700;">No completed orders</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.3rem;">Complete assigned deliveries to list them here.</p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
