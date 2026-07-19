@@ -561,9 +561,20 @@
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.8rem;">
                 <h3 style="font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.2rem; margin: 0;">Inventory Stock Control</h3>
-                <button @click="showAddProductModal = true" class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--banana-leaf);">
-                    <i class="fa-solid fa-plus"></i> Add New Product
-                </button>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <form hx-post="{% url 'admin_clear_inventory' %}" 
+                          hx-confirm="Are you sure you want to reset all product and slab stocks to 0?" 
+                          hx-swap="none"
+                          style="margin: 0; display: inline-block;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--terracotta);">
+                            <i class="fa-solid fa-trash-can"></i> Clear Stock to 0
+                        </button>
+                    </form>
+                    <button @click="showAddProductModal = true" class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--banana-leaf);">
+                        <i class="fa-solid fa-plus"></i> Add New Product
+                    </button>
+                </div>
             </div>
 
             <div class="table-container">

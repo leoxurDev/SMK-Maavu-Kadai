@@ -27,6 +27,7 @@ urlpatterns = [
     path('admin-dashboard/update-inventory/', views.admin_update_inventory, name='admin_update_inventory'),
     path('admin-dashboard/create-product/', views.admin_create_product, name='admin_create_product'),
     path('admin-dashboard/add-slab/', views.admin_add_slab, name='admin_add_slab'),
+    path('admin-dashboard/clear-inventory/', views.admin_clear_inventory, name='admin_clear_inventory'),
     path('login/', views.customer_login, name='customer_login'),
     path('verify-otp/', views.verify_otp, name='verify_otp'),
     path('logout/', views.customer_logout, name='customer_logout'),

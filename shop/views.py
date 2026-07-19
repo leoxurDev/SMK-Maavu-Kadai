@@ -1416,3 +1416,16 @@ def admin_add_slab(request):
         return response
         
     return redirect('admin_dashboard')
+
+@staff_member_required
+@require_POST
+def admin_clear_inventory(request):
+    Product.objects.update(bulk_stock=0.00)
+    PriceSlab.objects.update(stock=0)
+    
+    if request.htmx:
+        response = HttpResponse("")
+        response['HX-Trigger'] = 'inventoryUpdated'
+        return response
+        
+    return redirect('admin_dashboard')
