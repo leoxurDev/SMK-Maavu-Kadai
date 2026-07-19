@@ -24,7 +24,6 @@
                             hx-post="{% url 'remove_from_cart' %}" 
                             hx-vals='{"slab_id": "{{ item.slab.id }}"}'
                             hx-swap="none"
-                            hx-on::after-request="htmx.trigger(document.body, 'cartUpdated')"
                             title="Remove item">
                         <i class="fa-regular fa-trash-can"></i>
                     </button>
@@ -34,16 +33,14 @@
                         <button class="qty-btn" 
                                 hx-post="{% url 'update_cart_quantity' %}" 
                                 hx-vals='{"slab_id": "{{ item.slab.id }}", "action": "decrement"}'
-                                hx-swap="none"
-                                hx-on::after-request="htmx.trigger(document.body, 'cartUpdated')">
+                                hx-swap="none">
                             <i class="fa-solid fa-minus"></i>
                         </button>
                         <span class="qty-val">{{ item.quantity }}</span>
                         <button class="qty-btn" 
                                 hx-post="{% url 'update_cart_quantity' %}" 
                                 hx-vals='{"slab_id": "{{ item.slab.id }}", "action": "increment"}'
-                                hx-swap="none"
-                                hx-on::after-request="htmx.trigger(document.body, 'cartUpdated')">
+                                hx-swap="none">
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
