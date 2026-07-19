@@ -30,7 +30,7 @@
     <!-- TAB 1: ASSIGNED / PENDING DELIVERIES -->
     <div x-show="activeTab === 'pending'" id="pending-deliveries" 
          hx-get="{% url 'delivery_dashboard' %}"
-         hx-trigger="deliveryStatusUpdated from:body"
+         hx-trigger="deliveryStatusUpdated from:body, every 10s"
          hx-select="#pending-deliveries"
          hx-swap="outerHTML">
          
@@ -128,7 +128,7 @@
     <!-- TAB 2: COMPLETED DELIVERIES -->
     <div x-show="activeTab === 'completed'" id="completed-deliveries"
          hx-get="{% url 'delivery_dashboard' %}"
-         hx-trigger="deliveryStatusUpdated from:body"
+         hx-trigger="deliveryStatusUpdated from:body, every 10s"
          hx-select="#completed-deliveries"
          hx-swap="outerHTML"
          style="display: none;">

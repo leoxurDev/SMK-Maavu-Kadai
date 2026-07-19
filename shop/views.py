@@ -1269,6 +1269,86 @@ def delivery_mark_completed(request):
         
     return redirect('delivery_dashboard')
 
+def get_user_phone(user):
+    for val in [user.username, user.first_name, user.email]:
+        clean = "".join(filter(str.isdigit, val))
+        if len(clean) >= 10:
+            return clean[-10:]
+    return None
+
+def send_custom_sms(phone_number, message):
+    import urllib.request
+    import urllib.parse
+    import base64
+    import json
+    import sys
+    import os
+    
+    sms_provider = os.getenv('SMS_PROVIDER', 'none').lower().strip()
+    if sms_provider == 'none' and os.getenv('TWILIO_ACCOUNT_SID'):
+        sms_provider = 'twilio'
+    elif sms_provider == 'none' and os.getenv('FAST2SMS_API_KEY'):
+        sms_provider = 'fast2sms'
+    
+    formatted_phone = phone_number
+    if len(phone_number) == 10 and phone_number.isdigit():
+        formatted_phone = "+91" + phone_number
+
+    print(f"DEBUG SMS: Attempting to send custom SMS to {phone_number} using {sms_provider}", file=sys.stderr)
+
+    if sms_provider == 'twilio':
+        account_sid = os.getenv('TWILIO_ACCOUNT_SID')
+        auth_token = os.getenv('TWILIO_AUTH_TOKEN')
+        from_phone = os.getenv('TWILIO_PHONE_NUMBER')
+        if not account_sid or not auth_token or not from_phone:
+            return False
+            
+        url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
+        data = urllib.parse.urlencode({
+            'To': formatted_phone,
+            'From': from_phone,
+            'Body': message
+        }).encode('utf-8')
+        
+        req = urllib.request.Request(url, data=data, method='POST')
+        auth_str = f"{account_sid}:{auth_token}"
+        auth_b64 = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
+        req.add_header('Authorization', f'Basic {auth_b64}')
+        
+        try:
+            with urllib.request.urlopen(req) as response:
+                return True
+        except Exception as e:
+            print("ERROR SMS: Twilio custom SMS failed:", str(e), file=sys.stderr)
+            return False
+
+    elif sms_provider == 'fast2sms':
+        api_key = os.getenv('FAST2SMS_API_KEY')
+        if not api_key:
+            return False
+            
+        raw_10_digits = phone_number[-10:]
+        params = urllib.parse.urlencode({
+            'authorization': api_key,
+            'route': 'q',
+            'message': message,
+            'numbers': raw_10_digits,
+            'language': 'english'
+        })
+        url = f"https://www.fast2sms.com/dev/bulkV2?{params}"
+        
+        try:
+            req = urllib.request.Request(url, method='GET')
+            with urllib.request.urlopen(req) as response:
+                res_body = response.read().decode('utf-8')
+                res_json = json.loads(res_body)
+                print("DEBUG SMS: Fast2SMS custom SMS response:", res_json, file=sys.stderr)
+                return res_json.get('return', False)
+        except Exception as e:
+            print("ERROR SMS: Fast2SMS custom SMS failed:", str(e), file=sys.stderr)
+            return False
+    return False
+
 @staff_member_required
 @require_POST
 def admin_assign_delivery(request):
@@ -1280,9 +1360,17 @@ def admin_assign_delivery(request):
     if agent_id:
         agent = get_object_or_404(User, id=agent_id)
         order.assigned_delivery = agent
+        order.save()
+        
+        # Send notification to the delivery agent
+        phone = get_user_phone(agent)
+        if phone:
+            business_name = os.getenv('SMS_BUSINESS_NAME', 'Manikandan Maavu Kadai').strip()
+            msg = f"New order #{order.id} assigned to you by {business_name}. Customer: {order.customer.name or order.customer.phone_number}, Landmark: {order.address.landmark if order.address else 'N/A'}. Please check your delivery dashboard."
+            send_custom_sms(phone, msg)
     else:
         order.assigned_delivery = None
-    order.save()
+        order.save()
     
     if request.htmx:
         # Render the updated order row snippet
