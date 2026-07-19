@@ -19,6 +19,64 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     
     {% block extra_head %}{% endblock %}
+    
+    <!-- Error handling/reporting utility for developers -->
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            var errDiv = document.createElement('div');
+            errDiv.style.position = 'fixed';
+            errDiv.style.bottom = '10px';
+            errDiv.style.left = '10px';
+            errDiv.style.right = '10px';
+            errDiv.style.backgroundColor = 'rgba(255, 59, 48, 0.95)';
+            errDiv.style.color = 'white';
+            errDiv.style.padding = '12px';
+            errDiv.style.zIndex = '999999';
+            errDiv.style.fontSize = '12px';
+            errDiv.style.fontFamily = 'monospace';
+            errDiv.style.borderRadius = '8px';
+            errDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            errDiv.style.maxHeight = '200px';
+            errDiv.style.overflowY = 'auto';
+            errDiv.innerHTML = '<strong>JS Error:</strong> ' + message + ' <br><small>at ' + source + ':' + lineno + ':' + colno + '</small>';
+            document.body.appendChild(errDiv);
+            return false;
+        };
+        
+        document.addEventListener('htmx:responseError', function(event) {
+            var errDiv = document.createElement('div');
+            errDiv.style.position = 'fixed';
+            errDiv.style.bottom = '90px';
+            errDiv.style.left = '10px';
+            errDiv.style.right = '10px';
+            errDiv.style.backgroundColor = 'rgba(255, 149, 0, 0.95)';
+            errDiv.style.color = 'white';
+            errDiv.style.padding = '12px';
+            errDiv.style.zIndex = '999999';
+            errDiv.style.fontSize = '12px';
+            errDiv.style.fontFamily = 'monospace';
+            errDiv.style.borderRadius = '8px';
+            errDiv.innerHTML = '<strong>HTMX Response Error:</strong> ' + event.detail.xhr.status + ' for ' + event.detail.pathInfo.path;
+            document.body.appendChild(errDiv);
+        });
+        
+        document.addEventListener('htmx:swapError', function(event) {
+            var errDiv = document.createElement('div');
+            errDiv.style.position = 'fixed';
+            errDiv.style.bottom = '170px';
+            errDiv.style.left = '10px';
+            errDiv.style.right = '10px';
+            errDiv.style.backgroundColor = 'rgba(255, 204, 0, 0.95)';
+            errDiv.style.color = 'black';
+            errDiv.style.padding = '12px';
+            errDiv.style.zIndex = '999999';
+            errDiv.style.fontSize = '12px';
+            errDiv.style.fontFamily = 'monospace';
+            errDiv.style.borderRadius = '8px';
+            errDiv.innerHTML = '<strong>HTMX Swap Error:</strong> Target ID: ' + (event.detail.target ? event.detail.target.id : 'unknown');
+            document.body.appendChild(errDiv);
+        });
+    </script>
 </head>
 <body x-data="{ cartOpen: false, lang: localStorage.getItem('lang') || 'both' }" class="light" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
