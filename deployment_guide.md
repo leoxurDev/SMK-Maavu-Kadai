@@ -52,8 +52,8 @@ This guide outlines the step-by-step instructions to deploy the production-harde
 
 4. Install Docker, Compose, and Git on the host:
    ```bash
-   # Install git and Docker dependencies
-   sudo apt install -y git docker.io docker-compose
+   # Install git and Docker dependencies (docker-compose-v2 provides the modern 'docker compose' command)
+   sudo apt install -y git docker.io docker-compose-v2
 
    # Start and enable the Docker daemon
    sudo systemctl start docker
@@ -94,9 +94,9 @@ This guide outlines the step-by-step instructions to deploy the production-harde
 ---
 
 ## Step 4: Build and Launch Services
-Start the production docker-compose services in detached/background mode:
+Start the production docker compose services in detached/background mode:
 ```bash
-docker-compose up --build -d
+docker compose up --build -d
 ```
 
 ---
@@ -105,13 +105,13 @@ docker-compose up --build -d
 Run migrations, compile static files, and create a store manager superuser:
 ```bash
 # Run database migrations
-docker-compose exec web python manage.py migrate
+docker compose exec web python manage.py migrate
 
 # Collect static files into the shared static volume
-docker-compose exec web python manage.py collectstatic --noinput
+docker compose exec web python manage.py collectstatic --noinput
 
 # Create your Django Admin superuser account
-docker-compose exec web python manage.py createsuperuser
+docker compose exec web python manage.py createsuperuser
 ```
 
 ---
@@ -120,7 +120,7 @@ docker-compose exec web python manage.py createsuperuser
 To obtain a free SSL certificate for `yourdomain.com`:
 1. Stop the Nginx container temporarily so Certbot can run its verification server:
    ```bash
-   docker-compose stop nginx
+   docker compose stop nginx
    ```
 2. Install Certbot on the host:
    ```bash
@@ -132,7 +132,7 @@ To obtain a free SSL certificate for `yourdomain.com`:
    ```
 4. Update `docker-compose.yml` or `nginx.conf` if necessary, and start services again:
    ```bash
-   docker-compose start nginx
+   docker compose start nginx
    ```
 
 ---
@@ -140,13 +140,13 @@ To obtain a free SSL certificate for `yourdomain.com`:
 ## Step 7: Useful Commands for Maintenance
 * **View application logs**:
   ```bash
-  docker-compose logs -f web
+  docker compose logs -f web
   ```
 * **Restart workers or celery tasks service**:
   ```bash
-  docker-compose restart celery
+  docker compose restart celery
   ```
 * **Stop all services**:
   ```bash
-  docker-compose down
+  docker compose down
   ```
