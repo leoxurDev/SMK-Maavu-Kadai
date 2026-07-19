@@ -47,8 +47,9 @@ def add_to_cart(request):
     # Increment quantity and apply limit check
     quantity = int(request.POST.get('quantity', 1))
     current_qty = cart.get(slab_id_str, 0)
-    if current_qty + quantity > slab.stock:
-        cart[slab_id_str] = slab.stock
+    max_qty = slab.get_max_available_quantity()
+    if current_qty + quantity > max_qty:
+        cart[slab_id_str] = max_qty
         request.session['stock_exceeded'] = True
     elif current_qty + quantity > 10:
         cart[slab_id_str] = 10
@@ -75,10 +76,11 @@ def update_cart_quantity(request):
         
     cart = get_cart(request)
     slab = get_object_or_404(PriceSlab, id=slab_id_str)
+    max_qty = slab.get_max_available_quantity()
     
     if slab_id_str in cart:
         if action == 'increment':
-            if cart[slab_id_str] >= slab.stock:
+            if cart[slab_id_str] >= max_qty:
                 request.session['stock_exceeded'] = True
             elif cart[slab_id_str] >= 10:
                 request.session['limit_exceeded'] = True
@@ -282,9 +284,10 @@ def checkout(request):
             
         # Verify stock availability for all items before placing the order
         for item in cart_data['cart_items']:
-            if item['slab'].stock < item['quantity']:
+            if not item['slab'].is_in_stock(item['quantity']):
+                max_avail = item['slab'].get_max_available_quantity()
                 return render(request, 'shop/checkout.html', {
-                    'error': f"Sorry, {item['product'].name_en} ({item['slab'].quantity_value} {item['slab'].get_quantity_unit_display()}) does not have enough inventory. Only {item['slab'].stock} units left.",
+                    'error': f"Sorry, {item['product'].name_en} ({item['slab'].quantity_value} {item['slab'].get_quantity_unit_display()}) does not have enough inventory. Only {max_avail} units left.",
                     **cart_data
                 })
 
@@ -346,8 +349,7 @@ def checkout(request):
                         subtotal=item['subtotal']
                     )
                     # Deduct inventory stock
-                    item['slab'].stock -= item['quantity']
-                    item['slab'].save()
+                    item['slab'].deduct_stock(item['quantity'])
                     
                 # 5. Create Payment record
                 payment = Payment.objects.create(
@@ -621,6 +623,9 @@ def admin_dashboard(request):
     from django.db.models import Max
     max_order_id = Order.objects.aggregate(max_id=Max('id'))['max_id'] or 0
 
+    all_products = Product.objects.all().prefetch_related('price_slabs').order_by('category__display_order', 'name_en')
+    categories = Category.objects.all().order_by('display_order', 'name_en')
+
     context = {
         'today_sales': today_sales,
         'today_orders_count': today_orders_count,
@@ -637,6 +642,8 @@ def admin_dashboard(request):
         'top_products_labels_json': top_products_labels_json,
         'top_products_values_json': top_products_values_json,
         'delivery_staff': delivery_staff,
+        'all_products': all_products,
+        'categories': categories,
     }
     
     return render(request, 'shop/admin_dashboard.html', context)
@@ -656,13 +663,11 @@ def admin_update_status(request):
         # If order is cancelled, restore stock
         if new_status == 'cancelled' and old_status != 'cancelled':
             for item in order.items.all():
-                item.price_slab.stock += item.quantity
-                item.price_slab.save()
+                item.price_slab.restore_stock(item.quantity)
         # If order was cancelled and is now restored, subtract stock again
         elif old_status == 'cancelled' and new_status != 'cancelled':
             for item in order.items.all():
-                item.price_slab.stock = max(0, item.price_slab.stock - item.quantity)
-                item.price_slab.save()
+                item.price_slab.deduct_stock(item.quantity)
         
     if request.htmx:
         response = HttpResponse("")
@@ -1218,5 +1223,124 @@ def admin_assign_delivery(request):
             'status_choices': Order.STATUS_CHOICES,
             'delivery_staff': delivery_staff
         })
+        
+    return redirect('admin_dashboard')
+
+@staff_member_required
+@require_POST
+def admin_update_inventory(request):
+    from decimal import Decimal
+    target_type = request.POST.get('target_type')
+    
+    if target_type == 'bulk':
+        product_id = request.POST.get('product_id')
+        product = get_object_or_404(Product, id=product_id)
+        try:
+            product.bulk_stock = Decimal(request.POST.get('value', '0'))
+            product.save(update_fields=['bulk_stock'])
+        except Exception:
+            pass
+    elif target_type == 'packaged':
+        slab_id = request.POST.get('slab_id')
+        slab = get_object_or_404(PriceSlab, id=slab_id)
+        try:
+            slab.stock = int(request.POST.get('value', '0'))
+            slab.save(update_fields=['stock'])
+        except Exception:
+            pass
+    elif target_type == 'product_config':
+        product_id = request.POST.get('product_id')
+        product = get_object_or_404(Product, id=product_id)
+        inventory_type = request.POST.get('inventory_type')
+        bulk_unit = request.POST.get('bulk_unit')
+        if inventory_type in ['bulk', 'packaged']:
+            product.inventory_type = inventory_type
+        if bulk_unit in ['kg', 'g', 'l', 'ml', 'piece']:
+            product.bulk_unit = bulk_unit
+        product.save()
+        
+    if request.htmx:
+        response = HttpResponse("")
+        response['HX-Trigger'] = 'inventoryUpdated'
+        return response
+        
+    return redirect('admin_dashboard')
+
+@staff_member_required
+@require_POST
+def admin_create_product(request):
+    from decimal import Decimal
+    
+    category_id = request.POST.get('category_id')
+    name_en = request.POST.get('name_en')
+    name_ta = request.POST.get('name_ta')
+    description_en = request.POST.get('description_en', '')
+    description_ta = request.POST.get('description_ta', '')
+    image_file = request.FILES.get('image')
+    
+    inventory_type = request.POST.get('inventory_type', 'packaged')
+    bulk_stock_val = request.POST.get('bulk_stock', '100.00')
+    bulk_unit = request.POST.get('bulk_unit', 'kg')
+    
+    category = get_object_or_404(Category, id=category_id)
+    
+    product = Product.objects.create(
+        category=category,
+        name_en=name_en,
+        name_ta=name_ta,
+        description_en=description_en,
+        description_ta=description_ta,
+        image=image_file,
+        inventory_type=inventory_type,
+        bulk_stock=Decimal(bulk_stock_val),
+        bulk_unit=bulk_unit
+    )
+    
+    price_val = request.POST.get('slab_price')
+    qty_val = request.POST.get('slab_qty_value')
+    qty_unit = request.POST.get('slab_qty_unit')
+    slab_stock_val = request.POST.get('slab_stock', '100')
+    
+    if price_val and qty_val and qty_unit:
+        PriceSlab.objects.create(
+            product=product,
+            price=Decimal(price_val),
+            quantity_value=Decimal(qty_val),
+            quantity_unit=qty_unit,
+            stock=int(slab_stock_val)
+        )
+        
+    if request.htmx:
+        response = HttpResponse("")
+        response['HX-Trigger'] = 'inventoryUpdated'
+        return response
+        
+    return redirect('admin_dashboard')
+
+@staff_member_required
+@require_POST
+def admin_add_slab(request):
+    from decimal import Decimal
+    product_id = request.POST.get('product_id')
+    product = get_object_or_404(Product, id=product_id)
+    
+    price_val = request.POST.get('price')
+    qty_val = request.POST.get('quantity_value')
+    qty_unit = request.POST.get('quantity_unit')
+    stock_val = request.POST.get('stock', '100')
+    
+    if price_val and qty_val and qty_unit:
+        PriceSlab.objects.create(
+            product=product,
+            price=Decimal(price_val),
+            quantity_value=Decimal(qty_val),
+            quantity_unit=qty_unit,
+            stock=int(stock_val)
+        )
+        
+    if request.htmx:
+        response = HttpResponse("")
+        response['HX-Trigger'] = 'inventoryUpdated'
+        return response
         
     return redirect('admin_dashboard')

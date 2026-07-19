@@ -47,7 +47,7 @@
                                 selectedSlab: {% if product.price_slabs.all %}'{{ product.price_slabs.first.id }}'{% else %}''{% endif %},
                                 slabsStock: {
                                     {% for slab in product.price_slabs.all %}
-                                    '{{ slab.id }}': {{ slab.stock }}{% if not forloop.last %},{% endif %}
+                                    '{{ slab.id }}': {{ slab.get_max_available_quantity }}{% if not forloop.last %},{% endif %}
                                     {% endfor %}
                                 }
                             }">

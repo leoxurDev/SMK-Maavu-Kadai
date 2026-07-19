@@ -65,6 +65,34 @@ class Product(models.Model):
     description_ta = models.TextField("Description (Tamil)", blank=True)
     image = models.ImageField(upload_to='products/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    INVENTORY_CHOICES = [
+        ('packaged', 'Packaged Units (by Packets/Slabs)'),
+        ('bulk', 'Bulk Stock (by Total Weight/Volume)'),
+    ]
+    inventory_type = models.CharField(
+        "Inventory Type",
+        max_length=20,
+        choices=INVENTORY_CHOICES,
+        default='packaged'
+    )
+    bulk_stock = models.DecimalField(
+        "Bulk Stock level",
+        max_digits=10,
+        decimal_places=2,
+        default=100.00
+    )
+    bulk_unit = models.CharField(
+        "Bulk Stock Unit",
+        max_length=10,
+        choices=[
+            ('ml', 'ml'),
+            ('l', 'Litre'),
+            ('kg', 'kg'),
+            ('g', 'g'),
+            ('piece', 'Piece'),
+        ],
+        default='kg'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -96,6 +124,40 @@ class PriceSlab(models.Model):
     def __str__(self):
         # Format like: ₹30 - 600ml
         return f"₹{self.price} - {self.quantity_value} {self.get_quantity_unit_display()}"
+
+    def is_in_stock(self, quantity=1):
+        if self.product.inventory_type == 'bulk':
+            needed_weight = self.quantity_value * quantity
+            return self.product.bulk_stock >= needed_weight
+        else:
+            return self.stock >= quantity
+
+    def deduct_stock(self, quantity=1):
+        if self.product.inventory_type == 'bulk':
+            needed_weight = self.quantity_value * quantity
+            self.product.bulk_stock = max(0, self.product.bulk_stock - needed_weight)
+            self.product.save(update_fields=['bulk_stock'])
+        else:
+            self.stock = max(0, self.stock - quantity)
+            self.save(update_fields=['stock'])
+
+    def restore_stock(self, quantity=1):
+        if self.product.inventory_type == 'bulk':
+            needed_weight = self.quantity_value * quantity
+            self.product.bulk_stock += needed_weight
+            self.product.save(update_fields=['bulk_stock'])
+        else:
+            self.stock += quantity
+            self.save(update_fields=['stock'])
+
+    def get_max_available_quantity(self):
+        if self.product.inventory_type == 'bulk':
+            if self.quantity_value <= 0:
+                return 0
+            import math
+            return int(math.floor(self.product.bulk_stock / self.quantity_value))
+        else:
+            return self.stock
 
 class Customer(models.Model):
     phone_number = models.CharField(max_length=15, unique=True)
