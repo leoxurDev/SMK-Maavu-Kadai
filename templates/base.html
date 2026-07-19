@@ -20,7 +20,7 @@
     
     {% block extra_head %}{% endblock %}
 </head>
-<body x-data="{ cartOpen: false, lang: localStorage.getItem('lang') || 'both', theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') }" :class="theme" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body x-data="{ cartOpen: false, lang: localStorage.getItem('lang') || 'both' }" class="light" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
     <!-- Header Section -->
     <header>
@@ -35,12 +35,7 @@
                 </div>
             </a>
             
-            <div style="display: flex; align-items: center; gap: 0.4rem;">
-                <!-- Light / Dark theme toggle -->
-                <button class="theme-toggle-btn" @click="theme = (theme === 'light' ? 'dark' : 'light'); localStorage.setItem('theme', theme)" aria-label="Toggle Theme">
-                    <i class="fa-solid" :class="theme === 'light' ? 'fa-moon' : 'fa-sun'"></i>
-                </button>
-
+            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end;">
                 <!-- Bilingual Switch Widget -->
                 <div class="lang-toggle-group">
                     <button class="lang-toggle-btn" :class="lang === 'en' ? 'active' : ''" @click="lang = 'en'; localStorage.setItem('lang', 'en')">EN</button>

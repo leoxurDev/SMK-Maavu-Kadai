@@ -125,9 +125,92 @@
             font-family: var(--font-primary);
             font-size: 0.85rem;
         }
+
+        @media (max-width: 768px) {
+            .dash-container {
+                padding: 0 0.75rem;
+            }
+
+            .dash-tabs {
+                gap: 0.35rem;
+            }
+
+            .dash-tab-btn {
+                padding: 0.55rem 0.8rem;
+                font-size: 0.78rem;
+            }
+
+            .filter-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-form > div:last-child {
+                width: 100%;
+            }
+            header {
+                padding: 0.8rem 0;
+            }
+            .header-container {
+                flex-direction: column !important;
+                gap: 0.8rem;
+                text-align: center;
+                align-items: center !important;
+            }
+            .logo-group {
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center;
+                gap: 0.3rem !important;
+            }
+            .logo-icon {
+                margin: 0 !important;
+            }
+            .brand-text h1 {
+                font-size: 1.15rem !important;
+            }
+            .brand-text span {
+                font-size: 0.7rem !important;
+            }
+            .header-container > div:last-child {
+                width: 100%;
+                justify-content: center;
+            }
+            .form-group-dash {
+                width: 100% !important;
+            }
+            .form-group-dash select,
+            .form-group-dash input {
+                width: 100% !important;
+            }
+
+            .filter-form button,
+            .filter-form a {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .dash-table {
+                min-width: 880px;
+                font-size: 0.78rem;
+            }
+
+            .metric-card {
+                padding: 1rem;
+            }
+
+            .metric-value {
+                font-size: 1.35rem;
+            }
+        }
     </style>
 </head>
-<body x-data="{ currentTab: 'orders', lang: 'both', theme: localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') }" :class="theme" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body x-data="{ currentTab: 'orders', lang: 'both' }" class="light" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
     <!-- Header Section -->
     <header>
@@ -140,12 +223,7 @@
                 </div>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 0.4rem;">
-                <!-- Light / Dark theme toggle -->
-                <button class="theme-toggle-btn" @click="theme = (theme === 'light' ? 'dark' : 'light'); localStorage.setItem('theme', theme)" aria-label="Toggle Theme">
-                    <i class="fa-solid" :class="theme === 'light' ? 'fa-moon' : 'fa-sun'"></i>
-                </button>
-                
+            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end;">
                 <a href="/admin/" class="category-tab" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
                     <i class="fa-solid fa-cog"></i> Django Admin
                 </a>

@@ -1,6 +1,6 @@
 /* Apple Ecosystem Glassmorphic CSS */
 
-/* Base Variables for Light and Dark Modes */
+/* Base Variables for Light Theme only */
 body.light {
     --bg-base: #f5f5f7;
     --bg-surface: rgba(255, 255, 255, 0.7);
@@ -20,7 +20,7 @@ body.light {
     --danger-color: #ff3b30;
     --success-color: #34c759;
     --warning-color: #ff9500;
-    
+
     /* Legacy aliases for catalog & checkout compatibility */
     --dark-brown: #1d1d1f;
     --rice-white: #f5f5f7;
@@ -28,119 +28,6 @@ body.light {
     --terracotta: #0071e3;
     --banana-leaf: #34c759;
     --turmeric: #ff9500;
-}
-
-body.dark {
-    --bg-base: #000000;
-    --bg-surface: rgba(28, 28, 30, 0.7);
-    --bg-card: rgba(28, 28, 30, 0.85);
-    --bg-header: rgba(22, 22, 23, 0.8);
-    --text-primary: #f5f5f7;
-    --text-secondary: #86868b;
-    --border-color: rgba(255, 255, 255, 0.15);
-    --accent-color: #2997ff;
-    --accent-hover: #54a9ff;
-    --accent-shadow: rgba(41, 151, 255, 0.3);
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
-    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
-    --shadow-color-hover: rgba(0, 0, 0, 0.6);
-    --input-bg: rgba(255, 255, 255, 0.08);
-    --danger-color: #ff453a;
-    --success-color: #30d158;
-    --warning-color: #ff9f0a;
-    
-    /* Legacy aliases for catalog & checkout compatibility */
-    --dark-brown: #f5f5f7;
-    --rice-white: #1c1c1e;
-    --rice-cream: #2c2c2e;
-    --terracotta: #2997ff;
-    --banana-leaf: #30d158;
-    --turmeric: #ff9f0a;
-}
-
-/* Dynamic Dark Mode Inline Styles & Text Contrast Overrides */
-body.dark, 
-body.dark * {
-    color: #f5f5f7;
-}
-
-body.dark a, 
-body.dark button, 
-body.dark .btn-primary, 
-body.dark .btn-primary * {
-    color: #ffffff !important;
-}
-
-body.dark a:not(.btn-primary) {
-    color: var(--accent-color) !important;
-}
-
-body.dark .text-secondary,
-body.dark .product-desc,
-body.dark .slab-label-title,
-body.dark .cart-item-slab,
-body.dark .brand-text span,
-body.dark .address-badge span,
-body.dark .cart-summary-row,
-body.dark .qty-val,
-body.dark .remove-btn,
-body.dark .drawer-close,
-body.dark .metric-title,
-body.dark [style*="color: #665C58"],
-body.dark [style*="color: #555"],
-body.dark [style*="color: #665c58"],
-body.dark [style*="color: #887B75"],
-body.dark [style*="color: #887b75"],
-body.dark [style*="color: rgb(136, 123, 117)"],
-body.dark [style*="color: rgb(102, 92, 88)"] {
-    color: var(--text-secondary) !important;
-}
-
-body.dark .steam-badge,
-body.dark .steam-badge * {
-    color: var(--warning-color) !important;
-}
-
-body.dark [style*="color: var(--dark-brown)"] {
-    color: var(--text-primary) !important;
-}
-
-body.dark [style*="background-color: var(--rice-white)"] {
-    background-color: var(--bg-base) !important;
-}
-
-body.dark [style*="background-color: var(--rice-cream)"] {
-    background-color: var(--input-bg) !important;
-}
-
-body.dark [style*="background-color: white"],
-body.dark [style*="background-color: #white"],
-body.dark [style*="background-color: #fff"],
-body.dark [style*="background-color: #ffffff"],
-body.dark .metric-card,
-body.dark .table-container,
-body.dark .filter-form {
-    background-color: var(--bg-surface) !important;
-}
-
-body.dark [style*="border: 1px solid var(--border-color)"] {
-    border-color: var(--border-color) !important;
-}
-
-body.dark td, body.dark th {
-    color: var(--text-primary) !important;
-    border-bottom-color: var(--border-color) !important;
-}
-
-body.dark h2, body.dark h3, body.dark h4 {
-    color: var(--text-primary) !important;
-}
-
-body.dark select, body.dark input, body.dark textarea {
-    background-color: var(--bg-card) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border-color) !important;
 }
 
 /* Interactive Input & Element Transitions */
@@ -180,6 +67,38 @@ body {
     line-height: 1.47;
     letter-spacing: -0.022em;
     -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 600px) {
+    .header-container {
+        gap: 0.8rem;
+        align-items: flex-start;
+    }
+
+    .logo-group {
+        width: 100%;
+    }
+
+    .brand-text h1 {
+        font-size: 1rem;
+    }
+
+    .hero {
+        padding: 1rem 0.75rem;
+    }
+
+    .hero h2 {
+        font-size: 1.2rem;
+    }
+
+    main {
+        padding: 0.75rem;
+        padding-bottom: 4rem;
+    }
+
+    .category-nav {
+        top: 84px;
+    }
 }
 
 .tamil-text {

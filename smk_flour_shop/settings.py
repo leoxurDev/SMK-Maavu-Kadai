@@ -164,6 +164,7 @@ JAZZMIN_SETTINGS = {
     "welcome_sign": "Welcome to SMK Flour Shop Management Panel",
     "copyright": "SMK Flour Shop",
     "search_model": ["shop.Product", "shop.Order"],
+    "custom_css": "css/admin.css",
     "topmenu_links": [
         {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Operations Dashboard", "url": "/admin-dashboard/", "permissions": ["auth.view_user"]},
@@ -193,3 +194,16 @@ JAZZMIN_SETTINGS = {
 JAZZMIN_UI_TWEAKS = {
     "theme": "flatly",
 }
+
+# Production Security Hardening
+if not DEBUG:
+    SECURE_SSL_REDIRECT = env.bool('SECURE_SSL_REDIRECT', default=True)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000 # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

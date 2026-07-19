@@ -1,12 +1,11 @@
-FROM python:3.11-slim
+# --- Stage 1: Build dependencies ---
+FROM python:3.11-slim AS builder
 
-# Prevent Python from writing .pyc files and buffer stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install system build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
@@ -14,15 +13,39 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Copy project files
-COPY . /app/
+# --- Stage 2: Final minimal runtime ---
+FROM python:3.11-slim AS runner
 
-# Expose port 8000
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH=/home/appuser/.local/bin:$PATH
+
+WORKDIR /app
+
+# Install runtime system libraries (no build tools)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-libmysqlclient-dev \
+    libmagic1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root system user and group
+RUN groupadd -r appgroup && useradd -r -g appgroup -d /home/appuser -m appuser
+
+# Copy installed python dependencies from builder
+COPY --from=builder /root/.local /home/appuser/.local
+RUN chown -R appuser:appgroup /home/appuser
+
+# Copy project files and set ownership
+COPY --chown=appuser:appgroup . /app/
+
+# Expose Django port
 EXPOSE 8000
 
-# Default command for development
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Switch to the non-root user
+USER appuser
+
+# Gunicorn runs the WSGI server in production
+CMD ["gunicorn", "smk_flour_shop.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

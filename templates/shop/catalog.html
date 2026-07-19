@@ -100,6 +100,7 @@
                                         <!-- Add to Cart Form -->
                                         <form hx-post="{% url 'add_to_cart' %}" 
                                               hx-swap="none" 
+                                              hx-on::after-request="htmx.trigger(document.body, 'cartUpdated')"
                                               @submit="cartOpen = true"
                                               style="margin-top: auto;">
                                             {% csrf_token %}

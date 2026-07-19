@@ -10,8 +10,9 @@ services:
       MYSQL_USER: smk_user
       MYSQL_PASSWORD: smk_password
       MYSQL_ROOT_PASSWORD: smk_root_password
+    # Expose only to loopback interface (localhost) for secure SSH tunneling admin access
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 
@@ -19,20 +20,23 @@ services:
     image: redis:7-alpine
     container_name: smk_redis
     restart: always
+    # Restrict Redis ports to localhost only
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
   web:
     build: .
     container_name: smk_web
     restart: always
-    command: python manage.py runserver 0.0.0.0:8000
+    # Serves the app using production Gunicorn
+    command: gunicorn smk_flour_shop.wsgi:application --bind 0.0.0.0:8000 --workers 3
     volumes:
-      - .:/app
+      - django_static:/app/staticfiles
+      - django_media:/app/media
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
-      - DEBUG=True
+      - DEBUG=False
       - DB_ENGINE=mysql
       - DB_NAME=smk_flour_shop
       - DB_USER=smk_user
@@ -52,9 +56,9 @@ services:
     restart: always
     command: celery -A smk_flour_shop worker --loglevel=info
     volumes:
-      - .:/app
+      - django_media:/app/media
     environment:
-      - DEBUG=True
+      - DEBUG=False
       - DB_ENGINE=mysql
       - DB_NAME=smk_flour_shop
       - DB_USER=smk_user
@@ -68,5 +72,23 @@ services:
       - db
       - redis
 
+  nginx:
+    image: nginx:alpine
+    container_name: smk_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - django_static:/usr/share/nginx/html/static:ro
+      - django_media:/usr/share/nginx/html/media:ro
+      # Volume for Let's Encrypt certificates
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - web
+
 volumes:
   mysql_data:
+  django_static:
+  django_media:
