@@ -4,7 +4,7 @@ from .models import Shop, Category, Product, PriceSlab, Customer, Address, Order
 class PriceSlabInline(admin.TabularInline):
     model = PriceSlab
     extra = 1
-    fields = ('price', 'quantity_value', 'quantity_unit', 'display_order')
+    fields = ('price', 'quantity_value', 'quantity_unit', 'stock', 'display_order')
     ordering = ('display_order', 'price')
 
 from django.utils.html import format_html

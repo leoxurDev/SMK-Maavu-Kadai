@@ -43,7 +43,14 @@
                 <div class="catalog-grid">
                     {% for product in products %}
                         {% if product.category == category %}
-                            <div class="product-card" x-data="{ selectedSlab: {% if product.price_slabs.all %}'{{ product.price_slabs.first.id }}'{% else %}''{% endif %} }">
+                            <div class="product-card" x-data="{ 
+                                selectedSlab: {% if product.price_slabs.all %}'{{ product.price_slabs.first.id }}'{% else %}''{% endif %},
+                                slabsStock: {
+                                    {% for slab in product.price_slabs.all %}
+                                    '{{ slab.id }}': {{ slab.stock }}{% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                }
+                            }">
                                 <div class="product-img-container">
                                     {% if product.image %}
                                         <img src="{{ product.image.url }}" alt="{{ product.name_en }}" class="product-img">
@@ -82,15 +89,17 @@
                                             </div>
                                             <div class="slabs-grid">
                                                 {% for slab in product.price_slabs.all %}
-                                                    <label class="slab-option">
+                                                    <label class="slab-option" :class="{ 'slab-out-of-stock': slabsStock['{{ slab.id }}'] === 0 }" :style="slabsStock['{{ slab.id }}'] === 0 ? 'opacity: 0.55;' : ''">
                                                         <input type="radio" 
                                                                name="product-{{ product.id }}-slab" 
                                                                value="{{ slab.id }}" 
                                                                {% if forloop.first %}checked{% endif %}
+                                                               :disabled="slabsStock['{{ slab.id }}'] === 0"
                                                                @change="selectedSlab = '{{ slab.id }}'">
                                                         <span class="slab-btn">
                                                             <span class="slab-price">₹{{ slab.price|floatformat:0 }}</span>
                                                             <span class="slab-qty">{{ slab.quantity_value }} {{ slab.get_quantity_unit_display }}</span>
+                                                            <span x-show="slabsStock['{{ slab.id }}'] === 0" style="font-size: 0.65rem; color: var(--terracotta); display: block; font-weight: 700; margin-top: 2px;">Out of Stock</span>
                                                         </span>
                                                     </label>
                                                 {% endfor %}
@@ -104,10 +113,20 @@
                                               style="margin-top: auto;">
                                             {% csrf_token %}
                                             <input type="hidden" name="slab_id" :value="selectedSlab">
-                                            <button type="submit" class="btn-primary">
+                                            
+                                            <!-- Active Add to Cart button -->
+                                            <button type="submit" class="btn-primary" x-show="slabsStock[selectedSlab] > 0">
                                                 <i class="fa-solid fa-cart-plus"></i>
                                                 <span x-show="lang === 'en' || lang === 'both'">Add to Cart</span>
                                                 <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">கூடையில் சேர்</span>
+                                            </button>
+                                            
+                                            <!-- Disabled Out of Stock button -->
+                                            <button type="button" class="btn-primary" disabled x-show="slabsStock[selectedSlab] === 0" 
+                                                    style="background-color: var(--border-color); color: var(--text-secondary); cursor: not-allowed; border-color: var(--border-color); display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
+                                                <i class="fa-solid fa-ban"></i>
+                                                <span x-show="lang === 'en' || lang === 'both'">Out of Stock</span>
+                                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">கைவசம் இல்லை</span>
                                             </button>
                                         </form>
                                     {% else %}

@@ -88,6 +88,7 @@ class PriceSlab(models.Model):
     quantity_value = models.DecimalField(max_digits=10, decimal_places=2)
     quantity_unit = models.CharField(max_length=10, choices=UNIT_CHOICES)
     display_order = models.PositiveIntegerField(default=0)
+    stock = models.PositiveIntegerField("Stock Inventory", default=100)
 
     class Meta:
         ordering = ['display_order', 'price']

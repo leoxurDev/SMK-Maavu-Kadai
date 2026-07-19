@@ -47,7 +47,10 @@ def add_to_cart(request):
     # Increment quantity and apply limit check
     quantity = int(request.POST.get('quantity', 1))
     current_qty = cart.get(slab_id_str, 0)
-    if current_qty + quantity > 10:
+    if current_qty + quantity > slab.stock:
+        cart[slab_id_str] = slab.stock
+        request.session['stock_exceeded'] = True
+    elif current_qty + quantity > 10:
         cart[slab_id_str] = 10
         request.session['limit_exceeded'] = True
     else:
@@ -71,17 +74,21 @@ def update_cart_quantity(request):
         return HttpResponse("Invalid request parameters", status=400)
         
     cart = get_cart(request)
+    slab = get_object_or_404(PriceSlab, id=slab_id_str)
     
     if slab_id_str in cart:
         if action == 'increment':
-            if cart[slab_id_str] >= 10:
+            if cart[slab_id_str] >= slab.stock:
+                request.session['stock_exceeded'] = True
+            elif cart[slab_id_str] >= 10:
                 request.session['limit_exceeded'] = True
             else:
                 cart[slab_id_str] += 1
         elif action == 'decrement':
-            cart[slab_id_str] -= 1
-            if cart[slab_id_str] <= 0:
-                del cart[slab_id_str]
+            if cart[slab_id_str] <= 1:
+                cart.pop(slab_id_str)
+            else:
+                cart[slab_id_str] -= 1
         save_cart(request, cart)
         
     if request.htmx:
@@ -117,8 +124,10 @@ def cart_badge(request):
 def cart_drawer(request):
     # Renders the cart drawer content (usually loaded dynamically by htmx on click)
     limit_exceeded = request.session.pop('limit_exceeded', False)
+    stock_exceeded = request.session.pop('stock_exceeded', False)
     return render(request, 'shop/partials/cart_drawer_content.html', {
-        'limit_exceeded': limit_exceeded
+        'limit_exceeded': limit_exceeded,
+        'stock_exceeded': stock_exceeded
     })
 
 from django.db import transaction
@@ -271,6 +280,14 @@ def checkout(request):
                 except Exception:
                     pass
             
+        # Verify stock availability for all items before placing the order
+        for item in cart_data['cart_items']:
+            if item['slab'].stock < item['quantity']:
+                return render(request, 'shop/checkout.html', {
+                    'error': f"Sorry, {item['product'].name_en} ({item['slab'].quantity_value} {item['slab'].get_quantity_unit_display()}) does not have enough inventory. Only {item['slab'].stock} units left.",
+                    **cart_data
+                })
+
         try:
             with transaction.atomic():
                 # 1. Get or create customer
@@ -319,7 +336,7 @@ def checkout(request):
                     distance_km=distance_km
                 )
                 
-                # 4. Create OrderItems
+                # 4. Create OrderItems and deduct stock
                 for item in cart_data['cart_items']:
                     OrderItem.objects.create(
                         order=order,
@@ -328,6 +345,9 @@ def checkout(request):
                         quantity=item['quantity'],
                         subtotal=item['subtotal']
                     )
+                    # Deduct inventory stock
+                    item['slab'].stock -= item['quantity']
+                    item['slab'].save()
                     
                 # 5. Create Payment record
                 payment = Payment.objects.create(
@@ -569,8 +589,20 @@ def admin_update_status(request):
     order = get_object_or_404(Order, id=order_id)
     
     if new_status in dict(Order.STATUS_CHOICES):
+        old_status = order.status
         order.status = new_status
         order.save()
+        
+        # If order is cancelled, restore stock
+        if new_status == 'cancelled' and old_status != 'cancelled':
+            for item in order.items.all():
+                item.price_slab.stock += item.quantity
+                item.price_slab.save()
+        # If order was cancelled and is now restored, subtract stock again
+        elif old_status == 'cancelled' and new_status != 'cancelled':
+            for item in order.items.all():
+                item.price_slab.stock = max(0, item.price_slab.stock - item.quantity)
+                item.price_slab.save()
         
     if request.htmx:
         response = HttpResponse("")

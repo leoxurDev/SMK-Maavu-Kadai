@@ -8,6 +8,15 @@
             </div>
         </div>
     {% endif %}
+    {% if stock_exceeded %}
+        <div style="background-color: rgba(255, 149, 0, 0.1); border-left: 4px solid var(--warning-color); color: var(--warning-color); padding: 0.8rem; margin-bottom: 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;" id="cart-stock-warning">
+            <i class="fa-solid fa-box-open"></i>
+            <div>
+                <span x-show="lang === 'en' || lang === 'both'">Requested quantity exceeds available stock! Capped to stock limits.</span>
+                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'display: block; font-size: 0.7rem; margin-top: 1px;' : ''">கோரப்பட்ட அளவு கைவசமுள்ள இருப்பை விட அதிகமாக உள்ளது! இருப்பு வரம்புகளுக்குள் கட்டுப்படுத்தப்பட்டுள்ளது.</span>
+            </div>
+        </div>
+    {% endif %}
     <div style="display: flex; flex-direction: column; gap: 1rem;">
         {% for item in cart_items %}
             <div class="cart-item">
