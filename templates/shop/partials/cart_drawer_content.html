@@ -68,10 +68,19 @@
         </div>
         
         <!-- Redirect to Checkout checkout button -->
-        <a href="{% url 'checkout' %}" class="btn-primary" style="text-decoration: none; width: 100%;">
+        <a href="{% url 'checkout' %}" class="btn-primary" style="text-decoration: none; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
             <i class="fa-solid fa-wallet"></i>
             <span>Proceed to Checkout</span>
         </a>
+
+        <!-- Add More Items / Continue Shopping button -->
+        <button class="btn-secondary" 
+                style="width: 100%; margin-top: 0.6rem; height: 48px; border: 1px solid var(--border-color); border-radius: 12px; background: transparent; font-weight: 600; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                @click="cartOpen = false">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span x-show="lang === 'en' || lang === 'both'">Add More Items</span>
+            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">மேலும் பொருட்கள் சேர்க்கவும்</span>
+        </button>
     </div>
 {% else %}
     <div class="cart-empty">
