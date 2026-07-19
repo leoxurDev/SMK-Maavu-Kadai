@@ -552,12 +552,12 @@
         </div>
 
         <!-- TAB 5: INVENTORY MANAGEMENT -->
-        <div x-show="currentTab === 'inventory'" id="inventory-tab"
-             hx-get="{% url 'admin_dashboard' %}"
-             hx-trigger="inventoryUpdated from:body"
-             hx-select="#inventory-tab"
-             hx-swap="outerHTML"
-             style="display: none;">
+        <div x-show="currentTab === 'inventory'" style="display: none;">
+            <div id="inventory-tab-content"
+                 hx-get="{% url 'admin_dashboard' %}"
+                 hx-trigger="inventoryUpdated from:body"
+                 hx-select="#inventory-tab-content"
+                 hx-swap="outerHTML">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.8rem;">
                 <h3 style="font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.2rem; margin: 0;">Inventory Stock Control</h3>
@@ -682,6 +682,7 @@
                 </table>
             </div>
             
+            </div>
         </div>
 
         <!-- Add Product Popup Modal -->
