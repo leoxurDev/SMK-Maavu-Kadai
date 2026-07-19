@@ -6,8 +6,8 @@ This guide outlines the step-by-step instructions to deploy the production-harde
 
 ## Step 1: Provision your EC2 Instance
 1. Launch a new EC2 instance:
-   * **OS**: Ubuntu 22.04 LTS (x86_64)
-   * **Instance Type**: `t3.micro` or `t3.small` (at least 1GB - 2GB RAM is recommended)
+   * **OS**: Ubuntu 22.04 LTS (x86_64 or arm64 for Graviton)
+   * **Instance Type**: `t3.small` (General Purpose) or `t4g.small` (AWS Graviton) with 2 GB RAM (highly recommended for running Django, MySQL, Redis, and Celery together).
    * **Storage**: 20 GB gp3 SSD
 2. In the **Security Group** rules, open the following inbound ports:
    * `22` (SSH) — Restricted to your IP
@@ -16,22 +16,52 @@ This guide outlines the step-by-step instructions to deploy the production-harde
 
 ---
 
-## Step 2: Install System Dependencies
-Connect to your EC2 instance via SSH and run:
-```bash
-# Update system packages
-sudo apt update && sudo apt upgrade -y
+## Step 2: Install System Dependencies & Setup Swap Memory
 
-# Install Docker and git
-sudo apt install -y git docker.io docker-compose
+1. Connect to your EC2 instance via SSH and update system packages:
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+   ```
 
-# Start and enable Docker service
-sudo systemctl start docker
-sudo systemctl enable docker
+2. Configure a **2GB Swap File** (this acts as virtual memory to prevent database or container crashes during order spikes):
+   ```bash
+   # Allocate a 2GB file for swap space on the SSD
+   sudo fallocate -l 2G /swapfile
 
-# Add your user to the docker group (avoids needing sudo for docker commands)
-sudo usermod -aG docker $USER
-```
+   # Restrict permissions so only the root user can read/write it (crucial for security)
+   sudo chmod 600 /swapfile
+
+   # Set up the file as a Linux swap area
+   sudo mkswap /swapfile
+
+   # Enable the swap space immediately in the running kernel
+   sudo swapon /swapfile
+
+   # Make the swap settings permanent so it remains active after server reboots
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   ```
+
+3. Verify that the Swap Memory is active and correctly configured:
+   ```bash
+   # Verify the active swap systems
+   sudo swapon --show
+
+   # Check the total system memory allocation (you should see a ~2.0G Swap line)
+   free -h
+   ```
+
+4. Install Docker, Compose, and Git on the host:
+   ```bash
+   # Install git and Docker dependencies
+   sudo apt install -y git docker.io docker-compose
+
+   # Start and enable the Docker daemon
+   sudo systemctl start docker
+   sudo systemctl enable docker
+
+   # Add your current user to the docker group so you do not need sudo for docker commands
+   sudo usermod -aG docker $USER
+   ```
 *Note: Log out and log back in to apply the group membership changes.*
 
 ---
