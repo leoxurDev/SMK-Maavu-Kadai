@@ -581,6 +581,7 @@ def admin_update_status(request):
 
 import urllib.request
 import urllib.parse
+import urllib.error
 import json
 import base64
 import os
@@ -652,6 +653,10 @@ def send_sms_otp(phone_number, otp):
                 res_json = json.loads(res_body)
                 print("DEBUG SMS: Fast2SMS response:", res_body, file=sys.stderr)
                 return res_json.get('return', False)
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode('utf-8')
+            print(f"ERROR SMS: Fast2SMS HTTP Error {e.code}: {e.reason} | Response Body: {err_body}", file=sys.stderr)
+            return False
         except Exception as e:
             print("ERROR SMS: Failed to send via Fast2SMS:", str(e), file=sys.stderr)
             return False
