@@ -636,21 +636,17 @@ def send_sms_otp(phone_number, otp):
             print("ERROR SMS: Fast2SMS API key missing in environment", file=sys.stderr)
             return False
             
-        url = "https://www.fast2sms.com/dev/bulkV2"
         raw_10_digits = phone_number[-10:]
-        
-        payload = {
-            "variables_values": otp,
-            "route": "otp",
-            "numbers": raw_10_digits
-        }
-        
-        data = json.dumps(payload).encode('utf-8')
-        req = urllib.request.Request(url, data=data, method='POST')
-        req.add_header('authorization', api_key)
-        req.add_header('Content-Type', 'application/json')
+        params = urllib.parse.urlencode({
+            'authorization': api_key,
+            'variables_values': otp,
+            'route': 'otp',
+            'numbers': raw_10_digits
+        })
+        url = f"https://www.fast2sms.com/dev/bulkV2?{params}"
         
         try:
+            req = urllib.request.Request(url, method='GET')
             with urllib.request.urlopen(req) as response:
                 res_body = response.read().decode('utf-8')
                 res_json = json.loads(res_body)
