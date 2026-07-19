@@ -26,10 +26,15 @@ Built using **Django 4.2**, **SQLite/MySQL**, **Celery**, **Redis**, **Razorpay*
 * **Smart UI States**: Toggles between bilingual layouts automatically based on selected language configuration.
 
 ### 📦 Automated Stock Control System
+* **Packaged vs Bulk Stocks**:
+  * **Packaged Products** (e.g. Sweet Paniyaram, packets): Validated and tracked individually at the **Price Slab** level.
+  * **Bulk Products** (e.g. Dosa Batter, powders, curries): Validated and tracked collectively at the **Product** level. Multiple slab quantities in the cart (e.g. 1.0 kg and 2.0 kg) sum up and deduct from the same shared product bulk stock.
+* **Unit Normalization**: Automatically normalizes all values to base metrics (grams for mass, millilitres for volume) to ensure error-free checks (e.g., comparing a 2 kg bulk stock against a 500g slab).
 * **Real-time Validation**: Caps quantities added to the cart at the product's max available stock limit.
 * **Bilingual Warnings**: Displays automated visual warnings if request sizes are capped due to inventory limits.
 * **Auto-Deductions**: Instantly deducts purchased quantities from active product slabs upon checkout.
 * **Auto-Restoration**: Restores stock inventory values if an order is cancelled from the Operations Dashboard.
+* **Operations Configuration**: Toggle stock types, change units, adjust stock levels inline, add new products, add price slabs, or reset all stocks to 0 directly from the Operations Panel.
 
 ### 📊 Business Analytics Dashboard
 * **Daily Sales Trend**: Interactive Line Chart tracking total sales revenue over the past 7 days.
