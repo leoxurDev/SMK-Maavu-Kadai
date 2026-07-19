@@ -107,8 +107,11 @@ Run migrations, compile static files, and create a store manager superuser:
 # Run database migrations
 docker compose exec web python manage.py migrate
 
-# Collect static files into the shared static volume
-docker compose exec web python manage.py collectstatic --noinput
+# Collect static files into the shared static volume (run as root user to avoid volume permission errors)
+docker compose exec --user root web python manage.py collectstatic --noinput
+
+# Ensure the non-root appuser owns the static and media directories
+docker compose exec --user root web chown -R appuser:appgroup /app/staticfiles /app/media
 
 # Create your Django Admin superuser account
 docker compose exec web python manage.py createsuperuser
