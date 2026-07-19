@@ -94,45 +94,43 @@
     </main>
 
     <!-- Slide-over Cart Drawer -->
-    <template x-teleport="body">
-        <div class="drawer-backdrop" 
+    <div class="drawer-backdrop" 
+         x-show="cartOpen" 
+         x-transition:opacity
+         @click.away="cartOpen = false" 
+         style="display: none;">
+        
+        <div class="drawer-container" 
              x-show="cartOpen" 
-             x-transition:opacity
-             @click.away="cartOpen = false" 
-             style="display: none;">
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="transform translate-x-full"
+             x-transition:enter-end="transform translate-x-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="transform translate-x-0"
+             x-transition:leave-end="transform translate-x-full">
             
-            <div class="drawer-container" 
-                 x-show="cartOpen" 
-                 x-transition:enter="transition ease-out duration-300"
-                 x-transition:enter-start="transform translate-x-full"
-                 x-transition:enter-end="transform translate-x-0"
-                 x-transition:leave="transition ease-in duration-200"
-                 x-transition:leave-start="transform translate-x-0"
-                 x-transition:leave-end="transform translate-x-full">
-                
-                <div class="drawer-header">
-                    <div class="drawer-title">
-                        <i class="fa-solid fa-bag-shopping" style="color: var(--accent-color);"></i>
-                        <span>உங்களது கூடை / Your Cart</span>
-                    </div>
-                    <button class="drawer-close" @click="cartOpen = false" aria-label="Close Cart">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
+            <div class="drawer-header">
+                <div class="drawer-title">
+                    <i class="fa-solid fa-bag-shopping" style="color: var(--accent-color);"></i>
+                    <span>உங்களது கூடை / Your Cart</span>
                 </div>
-                
-                <!-- Dynamic Content Loaded by HTMX -->
-                <div id="cart-drawer-target" 
-                     class="drawer-content"
-                     hx-get="{% url 'cart_drawer' %}"
-                     hx-trigger="load, cartUpdated from:body">
-                    <div class="cart-empty">
-                        <i class="fa-solid fa-spinner fa-spin"></i>
-                        <p>Loading cart...</p>
-                    </div>
+                <button class="drawer-close" @click="cartOpen = false" aria-label="Close Cart">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <!-- Dynamic Content Loaded by HTMX -->
+            <div id="cart-drawer-target" 
+                 class="drawer-content"
+                 hx-get="{% url 'cart_drawer' %}"
+                 hx-trigger="load, cartUpdated from:body">
+                <div class="cart-empty">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <p>Loading cart...</p>
                 </div>
             </div>
         </div>
-    </template>
+    </div>
 
     {% block extra_js %}{% endblock %}
 </body>

@@ -9,7 +9,9 @@
         <span>உங்களது கூடை / Your Shopping Cart</span>
     </h2>
 
-    <div id="cart-drawer-target">
+    <div id="cart-page-target"
+         hx-get="{% url 'cart_drawer' %}"
+         hx-trigger="cartUpdated from:body">
         {% include 'shop/partials/cart_drawer_content.html' %}
     </div>
 </div>
