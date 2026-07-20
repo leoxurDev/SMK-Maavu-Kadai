@@ -102,6 +102,14 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.name_en} / {self.name_ta}"
 
+    @property
+    def is_in_stock(self):
+        if self.inventory_type == 'bulk':
+            return self.bulk_stock > 0
+        else:
+            return any(slab.stock > 0 for slab in self.price_slabs.all())
+
+
 class PriceSlab(models.Model):
     UNIT_CHOICES = [
         ('ml', 'ml'),

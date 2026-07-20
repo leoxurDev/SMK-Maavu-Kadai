@@ -3,6 +3,22 @@
 
 {% block title %}SMK Flour Shop - Catalog{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Grayscale and disabled styles for out-of-stock products */
+    .product-card.product-out-of-stock {
+        filter: grayscale(100%) !important;
+        opacity: 0.65 !important;
+        pointer-events: none !important;
+        user-select: none !important;
+        cursor: not-allowed !important;
+    }
+    .product-card.product-out-of-stock img {
+        filter: grayscale(100%) !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Category Sticky Navigation -->
 <nav class="category-nav">
@@ -13,136 +29,237 @@
             <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.75rem;' : ''">{{ category.name_ta }}</span>
         </a>
     {% endfor %}
+    {% if out_of_stock_products %}
+        <a href="#out-of-stock-section" class="category-tab" style="opacity: 0.7;">
+            <span x-show="lang === 'en' || lang === 'both'">Out of Stock</span>
+            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.75rem;' : ''">கைவசம் இல்லை</span>
+        </a>
+    {% endif %}
 </nav>
 
 <!-- Catalog Sections -->
 <div style="margin-top: 1.5rem;">
     {% for category in categories %}
-        {% if category.products.all %}
-            <section id="category-{{ category.id }}" class="category-section">
-                <h3 class="category-title" style="display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
-                    <div>
-                        <span x-show="lang === 'en' || lang === 'both'">{{ category.name_en }}</span>
-                        <span x-show="lang === 'both'" style="margin: 0 4px; font-weight: 400; opacity: 0.5; font-size: 1rem;">/</span>
-                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.85rem; font-weight: 500; color: #887B75;' : ''">{{ category.name_ta }}</span>
-                    </div>
-                    
-                    <!-- Animated Hot & Fresh steam badge for ready-to-eat/sweets/curries -->
-                    {% if category.name_en == 'Ready-to-eat' or category.name_en == 'Sweets' or category.name_en == 'Curries' %}
-                        <span class="steam-badge" style="margin-left: 0.6rem;">
-                            <div class="steam-container">
-                                <div class="steam-line"></div>
-                                <div class="steam-line"></div>
-                                <div class="steam-line"></div>
-                            </div>
-                            <span style="font-size: 0.6rem; margin-left: 0.2rem; font-family: var(--font-primary);">Hot & Fresh</span>
-                        </span>
-                    {% endif %}
-                </h3>
+        <section id="category-{{ category.id }}" class="category-section">
+            <h3 class="category-title" style="display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
+                <div>
+                    <span x-show="lang === 'en' || lang === 'both'">{{ category.name_en }}</span>
+                    <span x-show="lang === 'both'" style="margin: 0 4px; font-weight: 400; opacity: 0.5; font-size: 1rem;">/</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.85rem; font-weight: 500; color: #887B75;' : ''">{{ category.name_ta }}</span>
+                </div>
                 
-                <div class="catalog-grid">
-                    {% for product in products %}
-                        {% if product.category == category %}
-                            <div class="product-card" x-data="{ 
-                                selectedSlab: {% if product.price_slabs.all %}'{{ product.price_slabs.first.id }}'{% else %}''{% endif %},
-                                slabsStock: {
-                                    {% for slab in product.price_slabs.all %}
-                                    '{{ slab.id }}': {{ slab.get_max_available_quantity }}{% if not forloop.last %},{% endif %}
-                                    {% endfor %}
-                                }
-                            }">
-                                <div class="product-img-container">
-                                    {% if product.image %}
-                                        <img src="{{ product.image.url }}" alt="{{ product.name_en }}" class="product-img">
-                                    {% else %}
-                                        <div class="product-placeholder">
-                                            <i class="fa-solid fa-bowl-rice"></i>
-                                            <span x-show="lang === 'en' || lang === 'both'">No Image</span>
-                                            <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.7rem;">படம் இல்லை</span>
-                                        </div>
-                                    {% endif %}
+                <!-- Animated Hot & Fresh steam badge for ready-to-eat/sweets/curries -->
+                {% if category.name_en == 'Ready-to-eat' or category.name_en == 'Sweets' or category.name_en == 'Curries' %}
+                    <span class="steam-badge" style="margin-left: 0.6rem;">
+                        <div class="steam-container">
+                            <div class="steam-line"></div>
+                            <div class="steam-line"></div>
+                            <div class="steam-line"></div>
+                        </div>
+                        <span style="font-size: 0.6rem; margin-left: 0.2rem; font-family: var(--font-primary);">Hot & Fresh</span>
+                    </span>
+                {% endif %}
+            </h3>
+            
+            <div class="catalog-grid">
+                {% for product in products %}
+                    {% if product.category == category %}
+                        <div class="product-card" x-data="{ 
+                            selectedSlab: {% if product.price_slabs.all %}'{{ product.price_slabs.first.id }}'{% else %}''{% endif %},
+                            slabsStock: {
+                                {% for slab in product.price_slabs.all %}
+                                '{{ slab.id }}': {{ slab.get_max_available_quantity }}{% if not forloop.last %},{% endif %}
+                                {% endfor %}
+                            }
+                        }">
+                            <div class="product-img-container">
+                                {% if product.image %}
+                                    <img src="{{ product.image.url }}" alt="{{ product.name_en }}" class="product-img">
+                                Aminer URL -- wait, let's not type comments inside template tag -->
+                                {% else %}
+                                    <div class="product-placeholder">
+                                        <i class="fa-solid fa-bowl-rice"></i>
+                                        <span x-show="lang === 'en' || lang === 'both'">No Image</span>
+                                        <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.7rem;">படம் இல்லை</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="product-info">
+                                <div class="product-names">
+                                    <span class="product-name-en" x-show="lang === 'en' || lang === 'both'">{{ product.name_en }}</span>
+                                    <span class="product-name-ta tamil-text" x-show="lang === 'ta' || lang === 'both'">{{ product.name_ta }}</span>
                                 </div>
                                 
-                                <div class="product-info">
-                                    <div class="product-names">
-                                        <span class="product-name-en" x-show="lang === 'en' || lang === 'both'">{{ product.name_en }}</span>
-                                        <span class="product-name-ta tamil-text" x-show="lang === 'ta' || lang === 'both'">{{ product.name_ta }}</span>
+                                {% if product.description_en or product.description_ta %}
+                                    <p class="product-desc">
+                                        <span x-show="lang === 'en' || lang === 'both'">{{ product.description_en }}</span>
+                                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'display: block; font-size: 0.75rem; margin-top: 0.1rem; opacity: 0.85;' : ''">{{ product.description_ta }}</span>
+                                    </p>
+                                {% else %}
+                                    <p class="product-desc" style="font-style: italic; color: #aaa;">
+                                        <span x-show="lang === 'en' || lang === 'both'">No description available.</span>
+                                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">விளக்கம் இல்லை.</span>
+                                    </p>
+                                {% endif %}
+                                
+                                {% if product.price_slabs.all %}
+                                    <div class="slabs-container">
+                                        <div class="slab-label-title">
+                                            <span x-show="lang === 'en' || lang === 'both'">Select Quantity</span>
+                                            <span x-show="lang === 'ta' || lang === 'both'">அளவை தேர்ந்தெடு</span>
+                                        </div>
+                                        <div class="slabs-grid">
+                                            {% for slab in product.price_slabs.all %}
+                                                <label class="slab-option" :class="{ 'slab-out-of-stock': slabsStock['{{ slab.id }}'] === 0 }" :style="slabsStock['{{ slab.id }}'] === 0 ? 'opacity: 0.55;' : ''">
+                                                    <input type="radio" 
+                                                           name="product-{{ product.id }}-slab" 
+                                                           value="{{ slab.id }}" 
+                                                           {% if forloop.first %}checked{% endif %}
+                                                           :disabled="slabsStock['{{ slab.id }}'] === 0"
+                                                           @change="selectedSlab = '{{ slab.id }}'">
+                                                    <span class="slab-btn">
+                                                        <span class="slab-price">₹{{ slab.price|floatformat:0 }}</span>
+                                                        <span class="slab-qty">{{ slab.quantity_value }} {{ slab.get_quantity_unit_display }}</span>
+                                                        <span x-show="slabsStock['{{ slab.id }}'] === 0" style="font-size: 0.65rem; color: var(--terracotta); display: block; font-weight: 700; margin-top: 2px;">Out of Stock</span>
+                                                    </span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
                                     </div>
                                     
-                                    {% if product.description_en or product.description_ta %}
-                                        <p class="product-desc">
-                                            <span x-show="lang === 'en' || lang === 'both'">{{ product.description_en }}</span>
-                                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'display: block; font-size: 0.75rem; margin-top: 0.1rem; opacity: 0.85;' : ''">{{ product.description_ta }}</span>
-                                        </p>
-                                    {% else %}
-                                        <p class="product-desc" style="font-style: italic; color: #aaa;">
-                                            <span x-show="lang === 'en' || lang === 'both'">No description available.</span>
-                                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">விளக்கம் இல்லை.</span>
-                                        </p>
-                                    {% endif %}
-                                    
-                                    {% if product.price_slabs.all %}
-                                        <div class="slabs-container">
-                                            <div class="slab-label-title">
-                                                <span x-show="lang === 'en' || lang === 'both'">Select Quantity</span>
-                                                <span x-show="lang === 'ta' || lang === 'both'">அளவை தேர்ந்தெடு</span>
-                                            </div>
-                                            <div class="slabs-grid">
-                                                {% for slab in product.price_slabs.all %}
-                                                    <label class="slab-option" :class="{ 'slab-out-of-stock': slabsStock['{{ slab.id }}'] === 0 }" :style="slabsStock['{{ slab.id }}'] === 0 ? 'opacity: 0.55;' : ''">
-                                                        <input type="radio" 
-                                                               name="product-{{ product.id }}-slab" 
-                                                               value="{{ slab.id }}" 
-                                                               {% if forloop.first %}checked{% endif %}
-                                                               :disabled="slabsStock['{{ slab.id }}'] === 0"
-                                                               @change="selectedSlab = '{{ slab.id }}'">
-                                                        <span class="slab-btn">
-                                                            <span class="slab-price">₹{{ slab.price|floatformat:0 }}</span>
-                                                            <span class="slab-qty">{{ slab.quantity_value }} {{ slab.get_quantity_unit_display }}</span>
-                                                            <span x-show="slabsStock['{{ slab.id }}'] === 0" style="font-size: 0.65rem; color: var(--terracotta); display: block; font-weight: 700; margin-top: 2px;">Out of Stock</span>
-                                                        </span>
-                                                    </label>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
+                                    <!-- Add to Cart Form -->
+                                    <form hx-post="{% url 'add_to_cart' %}" 
+                                          hx-swap="none" 
+                                          @submit="cartOpen = true"
+                                          style="margin-top: auto;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="slab_id" :value="selectedSlab">
                                         
-                                        <!-- Add to Cart Form -->
-                                        <form hx-post="{% url 'add_to_cart' %}" 
-                                              hx-swap="none" 
-                                              @submit="cartOpen = true"
-                                              style="margin-top: auto;">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="slab_id" :value="selectedSlab">
-                                            
-                                            <!-- Active Add to Cart button -->
-                                            <button type="submit" class="btn-primary" x-show="slabsStock[selectedSlab] > 0">
-                                                <i class="fa-solid fa-cart-plus"></i>
-                                                <span x-show="lang === 'en' || lang === 'both'">Add to Cart</span>
-                                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">கூடையில் சேர்</span>
-                                            </button>
-                                            
-                                            <!-- Disabled Out of Stock button -->
-                                            <button type="button" class="btn-primary" disabled x-show="slabsStock[selectedSlab] === 0" 
-                                                    style="background-color: var(--border-color); color: var(--text-secondary); cursor: not-allowed; border-color: var(--border-color); display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
-                                                <i class="fa-solid fa-ban"></i>
-                                                <span x-show="lang === 'en' || lang === 'both'">Out of Stock</span>
-                                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">கைவசம் இல்லை</span>
-                                            </button>
-                                        </form>
-                                    {% else %}
-                                        <div style="margin-top: auto; color: var(--terracotta); font-weight: 600; font-size: 0.85rem; text-align: center; padding: 0.5rem; border: 1px dashed var(--border-color); border-radius: 8px;">
+                                        <!-- Active Add to Cart button -->
+                                        <button type="submit" class="btn-primary" x-show="slabsStock[selectedSlab] > 0">
+                                            <i class="fa-solid fa-cart-plus"></i>
+                                            <span x-show="lang === 'en' || lang === 'both'">Add to Cart</span>
+                                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">கூடையில் சேர்</span>
+                                        </button>
+                                        
+                                        <!-- Disabled Out of Stock button -->
+                                        <button type="button" class="btn-primary" disabled x-show="slabsStock[selectedSlab] === 0" 
+                                                style="background-color: var(--border-color); color: var(--text-secondary); cursor: not-allowed; border-color: var(--border-color); display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
+                                            <i class="fa-solid fa-ban"></i>
                                             <span x-show="lang === 'en' || lang === 'both'">Out of Stock</span>
-                                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'display: block; font-size: 0.75rem; margin-top: 2px;' : ''">தற்காலிகமாக இல்லை</span>
-                                        </div>
-                                    {% endif %}
-                                </div>
+                                            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">கைவசம் இல்லை</span>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <div style="margin-top: auto; color: var(--terracotta); font-weight: 600; font-size: 0.85rem; text-align: center; padding: 0.5rem; border: 1px dashed var(--border-color); border-radius: 8px;">
+                                        <span x-show="lang === 'en' || lang === 'both'">Out of Stock</span>
+                                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'display: block; font-size: 0.75rem; margin-top: 2px;' : ''">தற்காலிகமாக இல்லை</span>
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </section>
-        {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
     {% endfor %}
+    
+    <!-- Consolidated Out of Stock Section at the Bottom -->
+    {% if out_of_stock_products %}
+        <section id="out-of-stock-section" class="category-section" style="border-top: 2px dashed var(--border-color); padding-top: 2rem; margin-top: 3rem;">
+            <h3 class="category-title" style="display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; color: #887B75;">
+                <div>
+                    <span x-show="lang === 'en' || lang === 'both'">Out of Stock (Currently Unavailable)</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" style="color: #887B75;">தற்காலிகமாக இல்லை</span>
+                </div>
+            </h3>
+            
+            <div class="catalog-grid">
+                {% for product in out_of_stock_products %}
+                    <div class="product-card product-out-of-stock" x-data="{ 
+                        selectedSlab: {% if product.price_slabs.all %}'{{ product.price_slabs.first.id }}'{% else %}''{% endif %},
+                        slabsStock: {
+                            {% for slab in product.price_slabs.all %}
+                            '{{ slab.id }}': {{ slab.get_max_available_quantity }}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        }
+                    }">
+                        <div class="product-img-container">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" alt="{{ product.name_en }}" class="product-img">
+                            {% else %}
+                                <div class="product-placeholder">
+                                    <i class="fa-solid fa-bowl-rice"></i>
+                                    <span x-show="lang === 'en' || lang === 'both'">No Image</span>
+                                    <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.7rem;">படம் இல்லை</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="product-info">
+                            <div class="product-names">
+                                <span class="product-name-en" x-show="lang === 'en' || lang === 'both'">{{ product.name_en }}</span>
+                                <span class="product-name-ta tamil-text" x-show="lang === 'ta' || lang === 'both'">{{ product.name_ta }}</span>
+                            </div>
+                            
+                            {% if product.description_en or product.description_ta %}
+                                <p class="product-desc">
+                                    <span x-show="lang === 'en' || lang === 'both'">{{ product.description_en }}</span>
+                                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'display: block; font-size: 0.75rem; margin-top: 0.1rem; opacity: 0.85;' : ''">{{ product.description_ta }}</span>
+                                </p>
+                            {% else %}
+                                <p class="product-desc" style="font-style: italic; color: #aaa;">
+                                    <span x-show="lang === 'en' || lang === 'both'">No description available.</span>
+                                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">விளக்கம் இல்லை.</span>
+                                </p>
+                            {% endif %}
+                            
+                            {% if product.price_slabs.all %}
+                                <div class="slabs-container">
+                                    <div class="slab-label-title">
+                                        <span x-show="lang === 'en' || lang === 'both'">Select Quantity</span>
+                                        <span x-show="lang === 'ta' || lang === 'both'">அளவை தேர்ந்தெடு</span>
+                                    </div>
+                                    <div class="slabs-grid">
+                                        {% for slab in product.price_slabs.all %}
+                                            <label class="slab-option slab-out-of-stock" style="opacity: 0.55;">
+                                                <input type="radio" 
+                                                       name="product-{{ product.id }}-slab" 
+                                                       value="{{ slab.id }}" 
+                                                       {% if forloop.first %}checked{% endif %}
+                                                       disabled
+                                                       @change="selectedSlab = '{{ slab.id }}'">
+                                                <span class="slab-btn">
+                                                    <span class="slab-price">₹{{ slab.price|floatformat:0 }}</span>
+                                                    <span class="slab-qty">{{ slab.quantity_value }} {{ slab.get_quantity_unit_display }}</span>
+                                                    <span style="font-size: 0.65rem; color: var(--terracotta); display: block; font-weight: 700; margin-top: 2px;">Out of Stock</span>
+                                                </span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <form style="margin-top: auto;">
+                                    <button type="button" class="btn-primary" disabled 
+                                            style="background-color: var(--border-color); color: var(--text-secondary); cursor: not-allowed; border-color: var(--border-color); display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
+                                        <i class="fa-solid fa-ban"></i>
+                                        <span x-show="lang === 'en' || lang === 'both'">Out of Stock</span>
+                                        <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">கைவசம் இல்லை</span>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <div style="margin-top: auto; color: var(--terracotta); font-weight: 600; font-size: 0.85rem; text-align: center; padding: 0.5rem; border: 1px dashed var(--border-color); border-radius: 8px;">
+                                    <span x-show="lang === 'en' || lang === 'both'">Out of Stock</span>
+                                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'display: block; font-size: 0.75rem; margin-top: 2px;' : ''">தற்காலிகமாக இல்லை</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
 </div>
 {% endblock %}
 

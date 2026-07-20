@@ -23,16 +23,31 @@ def save_cart(request, cart):
     request.session.modified = True
 
 def catalog(request):
-    categories = Category.objects.all().order_by('display_order', 'name_en')
     # Fetch active products with price slabs pre-fetched
-    products = Product.objects.filter(is_active=True).prefetch_related('price_slabs').select_related('category')
+    all_products = list(Product.objects.filter(is_active=True).prefetch_related('price_slabs').select_related('category'))
     
-    # Simple category filtering in python or django query (we will display all and scroll/filter via tabs)
+    # Filter in-stock and out-of-stock products
+    in_stock_products = [p for p in all_products if p.is_in_stock]
+    out_of_stock_products = [p for p in all_products if not p.is_in_stock]
+    
+    # Fetch all categories ordered by display_order
+    categories = Category.objects.all().order_by('display_order', 'name_en')
+    
+    # Filter categories that contain at least one in-stock product
+    active_categories = []
+    for cat in categories:
+        has_items = any(p.category_id == cat.id for p in in_stock_products)
+        if has_items:
+            active_categories.append(cat)
+            
     context = {
-        'categories': categories,
-        'products': products,
+        'categories': active_categories,
+        'products': in_stock_products,
+        'out_of_stock_products': out_of_stock_products,
     }
     return render(request, 'shop/catalog.html', context)
+
+
 
 def get_available_product_stock_for_cart(product, cart, exclude_slab_id=None):
     from shop.models import normalize_to_base
