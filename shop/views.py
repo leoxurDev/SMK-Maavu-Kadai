@@ -1030,11 +1030,22 @@ def download_invoice(request, order_id):
     story = []
     
     # 1. Header Information (Two Column layout: Company Details vs Invoice Details)
-    company_info = """
-    <b>SMK Flour Shop</b><br/>
-    Opposite Rani Hospital,<br/>
-    Selvapuram, Coimbatore - 641026<br/>
-    Phone: +91 7397536217
+    # Query shop details dynamically from the database
+    shop = Shop.objects.first()
+    if shop:
+        shop_name = shop.name
+        shop_address = shop.address.replace('\n', '<br/>')
+        shop_phone = shop.contact_number
+    else:
+        # Fallback values if no Shop is configured in the database
+        shop_name = "SMK Flour Shop"
+        shop_address = "Opposite Rani Hospital,<br/>Selvapuram, Coimbatore - 641026"
+        shop_phone = "+91 7397536217"
+
+    company_info = f"""
+    <b>{shop_name}</b><br/>
+    {shop_address}<br/>
+    Phone: {shop_phone}
     """
     
     invoice_details = f"""
@@ -1373,16 +1384,9 @@ def admin_assign_delivery(request):
         order.save()
     
     if request.htmx:
-        # Render the updated order row snippet
-        delivery_staff = User.objects.filter(
-            Q(groups__name='Delivery Staff') | Q(is_staff=True)
-        ).distinct().order_by('username')
-        
-        return render(request, 'shop/partials/admin_order_row.html', {
-            'order': order,
-            'status_choices': Order.STATUS_CHOICES,
-            'delivery_staff': delivery_staff
-        })
+        response = HttpResponse("")
+        response['HX-Trigger'] = 'newOrderReceived'
+        return response
         
     return redirect('admin_dashboard')
 

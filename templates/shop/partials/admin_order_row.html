@@ -19,8 +19,7 @@
                 <select name="agent_id" 
                         hx-post="{% url 'admin_assign_delivery' %}"
                         hx-vals='{"order_id": "{{ order.id }}"}'
-                        hx-target="#order-row-{{ order.id }}"
-                        hx-swap="outerHTML"
+                        hx-swap="none"
                         style="height: 26px; border: 1px solid var(--border-color); border-radius: 4px; padding: 0 0.2rem; font-size: 0.7rem; font-weight: 600; outline: none; background-color: var(--bg-card); cursor: pointer; max-width: 110px;">
                     <option value="">Unassigned</option>
                     {% for agent in delivery_staff %}
