@@ -362,8 +362,13 @@ echo -e "\n${BLUE}[5/7] Starting Docker Compose Containers...${CLEAR}"
 echo "Running: docker compose down..."
 docker compose down
 
+echo "Pruning unused Docker build cache and dangling images to free up VM disk space..."
+docker image prune -f || true
+docker builder prune -f || true
+
 echo "Running: docker compose up -d --build..."
 echo -e "${YELLOW}Compose is downloading/compiling and building images. Since Docker contains depends_on conditions, it will wait for the MySQL database to finish initializing and report healthy status before initiating web/celery.${CLEAR}"
+
 
 docker compose up -d --build
 
