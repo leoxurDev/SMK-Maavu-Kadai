@@ -16,6 +16,34 @@ This guide outlines the step-by-step instructions to deploy the production-harde
 
 ---
 
+## Recommended: Automated Quick Deployment (One-Click Setup)
+
+For the easiest and most robust setup, use the automated deployment script included in the repository. This script automates:
+* Swap memory configuration (prevents Out Of Memory database crashes)
+* Docker and Compose installation
+* Interactive configuration (prompts you for Domain/IP, passwords, Twilio, and Razorpay details)
+* Let's Encrypt SSL certificate provisioning (with clean HTTP-only fallback)
+* Container startup order checks (waiting for MySQL to be fully healthy before starting migrations, resolving "Connection refused" issues)
+* Running Django migrations, static files collection, and creating a superuser
+
+### Running the automated script:
+1. Connect to your EC2 instance via SSH and clone the project:
+   ```bash
+   git clone https://github.com/leoxurDev/SMK-Maavu-Kadai.git smk-flour-shop
+   cd smk-flour-shop
+   ```
+2. Run the script with root privileges:
+   ```bash
+   sudo ./deploy.sh
+   ```
+3. Follow the interactive prompts to configure your system.
+
+---
+
+## Alternative: Manual Step-by-Step Deployment
+
+If you prefer to configure components manually, follow the steps below.
+
 ## Step 2: Install System Dependencies & Setup Swap Memory
 
 1. Connect to your EC2 instance via SSH and update system packages:
