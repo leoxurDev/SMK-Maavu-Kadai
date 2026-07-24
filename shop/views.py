@@ -1828,12 +1828,17 @@ def admin_send_test_email_report(request):
         pdf_response = admin_generate_report(req)
         pdf_data = pdf_response.content
         
+        use_ssl = (config.smtp_port == 465)
+        use_tls = (config.smtp_port == 587 or config.use_tls) if not use_ssl else False
+        
         connection = get_connection(
             host=config.smtp_host,
             port=config.smtp_port,
             username=config.smtp_user,
             password=config.smtp_password,
-            use_tls=config.use_tls
+            use_tls=use_tls,
+            use_ssl=use_ssl,
+            timeout=10
         )
         
         recipients = [e.strip() for e in config.recipient_email.split(',') if e.strip()]
