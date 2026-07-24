@@ -25,6 +25,7 @@ urlpatterns = [
     path('delivery/mark-completed/', views.delivery_mark_completed, name='delivery_mark_completed'),
     path('admin-dashboard/assign-delivery/', views.admin_assign_delivery, name='admin_assign_delivery'),
     path('admin-dashboard/update-inventory/', views.admin_update_inventory, name='admin_update_inventory'),
+    path('admin-dashboard/bulk-update-inventory/', views.admin_bulk_update_inventory, name='admin_bulk_update_inventory'),
     path('admin-dashboard/create-product/', views.admin_create_product, name='admin_create_product'),
     path('admin-dashboard/add-slab/', views.admin_add_slab, name='admin_add_slab'),
     path('admin-dashboard/clear-inventory/', views.admin_clear_inventory, name='admin_clear_inventory'),

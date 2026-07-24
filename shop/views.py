@@ -1447,6 +1447,35 @@ def admin_update_inventory(request):
 
 @staff_member_required
 @require_POST
+def admin_bulk_update_inventory(request):
+    from decimal import Decimal
+    for key, val in request.POST.items():
+        if key.startswith('bulk_stock_'):
+            try:
+                product_id = key.replace('bulk_stock_', '')
+                product = Product.objects.get(id=product_id)
+                product.bulk_stock = Decimal(val)
+                product.save(update_fields=['bulk_stock'])
+            except Exception:
+                pass
+        elif key.startswith('slab_stock_'):
+            try:
+                slab_id = key.replace('slab_stock_', '')
+                slab = PriceSlab.objects.get(id=slab_id)
+                slab.stock = int(val)
+                slab.save(update_fields=['stock'])
+            except Exception:
+                pass
+
+    if request.htmx:
+        response = HttpResponse("")
+        response['HX-Trigger'] = 'inventoryUpdated'
+        return response
+
+    return redirect('admin_dashboard')
+
+@staff_member_required
+@require_POST
 def admin_create_product(request):
     from decimal import Decimal
     

@@ -552,143 +552,92 @@
         </div>
 
         <!-- TAB 5: INVENTORY MANAGEMENT -->
-        <div x-show="currentTab === 'inventory'" style="display: none;">
+        <div x-show="currentTab === 'inventory'" x-data="{ inventorySearch: '' }" style="display: none;">
             <div id="inventory-tab-content"
                  hx-get="{% url 'admin_dashboard' %}"
                  hx-trigger="inventoryUpdated from:body"
                  hx-select="#inventory-tab-content"
                  hx-swap="outerHTML">
             
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.8rem;">
-                <h3 style="font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.2rem; margin: 0;">Inventory Stock Control</h3>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <form hx-post="{% url 'admin_clear_inventory' %}" 
-                          hx-confirm="Are you sure you want to reset all product and slab stocks to 0?" 
-                          hx-swap="none"
-                          style="margin: 0; display: inline-block;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--terracotta);">
+            <form hx-post="{% url 'admin_bulk_update_inventory' %}" hx-swap="none" style="margin: 0;">
+                {% csrf_token %}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.8rem;">
+                    <h3 style="font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.2rem; margin: 0;">Inventory Stock Control</h3>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="submit" class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: #2e7d32;">
+                            <i class="fa-solid fa-floppy-disk"></i> Save All Inventory Changes
+                        </button>
+                        <button type="button" 
+                              hx-post="{% url 'admin_clear_inventory' %}" 
+                              hx-confirm="Are you sure you want to reset all product and slab stocks to 0?" 
+                              hx-swap="none"
+                              class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--terracotta);">
                             <i class="fa-solid fa-trash-can"></i> Clear Stock to 0
                         </button>
-                    </form>
-                    <button @click="showAddProductModal = true" class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--banana-leaf);">
-                        <i class="fa-solid fa-plus"></i> Add New Product
-                    </button>
+                        <button type="button" @click="showAddProductModal = true" class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--banana-leaf);">
+                            <i class="fa-solid fa-plus"></i> Add New Product
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="table-container">
-                <table class="dash-table">
-                    <thead>
-                        <tr>
-                            <th style="padding: 0.8rem 1rem;">Product Details</th>
-                            <th style="padding: 0.8rem 1rem;">Category</th>
-                            <th style="padding: 0.8rem 1rem; min-width: 150px;">Inventory Type</th>
-                            <th style="padding: 0.8rem 1rem;">Live Stock / Slabs Config</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if all_products %}
-                            {% for product in all_products %}
-                                <tr style="border-bottom: 1px solid var(--border-color);">
-                                    <td style="padding: 0.8rem 1rem;">
-                                        <div style="font-weight: 700; color: var(--dark-brown);">{{ product.name_en }}</div>
-                                        <div style="font-size: 0.75rem; color: #887B75;">{{ product.name_ta }}</div>
-                                    </td>
-                                    <td style="padding: 0.8rem 1rem; font-weight: 500;">
-                                        {{ product.category.name_en }}
-                                    </td>
-                                    <td style="padding: 0.8rem 1rem;">
-                                        <form hx-post="{% url 'admin_update_inventory' %}" hx-swap="none" style="margin: 0;">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="target_type" value="product_config">
-                                            <input type="hidden" name="product_id" value="{{ product.id }}">
-                                            <select name="inventory_type" 
+                <!-- Inventory Product Search Input -->
+                <div style="margin-bottom: 1rem; position: relative;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #887B75; font-size: 0.9rem;"></i>
+                    <input type="text" 
+                           x-model="inventorySearch" 
+                           placeholder="🔍 Search products by name (e.g. Batter, Podi, Dosa)..." 
+                           style="width: 100%; padding: 0.65rem 0.8rem 0.65rem 2.2rem; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.85rem; outline: none; background-color: white; color: var(--text-primary);">
+                </div>
+
+                <div class="table-container">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th style="padding: 0.8rem 1rem;">Product Details</th>
+                                <th style="padding: 0.8rem 1rem;">Category</th>
+                                <th style="padding: 0.8rem 1rem; min-width: 150px;">Inventory Type</th>
+                                <th style="padding: 0.8rem 1rem;">Live Stock / Slabs Config</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if all_products %}
+                                {% for product in all_products %}
+                                    <tr x-show="!inventorySearch || '{{ product.name_en|lower|escapejs }} {{ product.name_ta|lower|escapejs }} {{ product.category.name_en|lower|escapejs }}'.includes(inventorySearch.toLowerCase().trim())" style="border-bottom: 1px solid var(--border-color);">
+                                        <td style="padding: 0.8rem 1rem;">
+                                            <div style="font-weight: 700; color: var(--dark-brown);">{{ product.name_en }}</div>
+                                            <div style="font-size: 0.75rem; color: #887B75;">{{ product.name_ta }}</div>
+                                        </td>
+                                        <td style="padding: 0.8rem 1rem; font-weight: 500;">
+                                            {{ product.category.name_en }}
+                                        </td>
+                                        <td style="padding: 0.8rem 1rem;">
+                                            <select name="inventory_type_{{ product.id }}" 
                                                     hx-post="{% url 'admin_update_inventory' %}"
+                                                    hx-vals='{"target_type": "product_config", "product_id": "{{ product.id }}"}'
                                                     hx-swap="none"
                                                     style="height: 30px; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 0.3rem; font-size: 0.75rem; font-weight: 700; outline: none; background-color: var(--bg-card); cursor: pointer; color: var(--text-primary); width: 100%; max-width: 140px;">
                                                 <option value="packaged" {% if product.inventory_type == 'packaged' %}selected{% endif %}>Packaged (Slabs)</option>
                                                 <option value="bulk" {% if product.inventory_type == 'bulk' %}selected{% endif %}>Bulk (Weight/Qty)</option>
                                             </select>
-                                        </form>
-                                    </td>
-                                    <td style="padding: 0.8rem 1rem;">
-                                        {% if product.inventory_type == 'bulk' %}
-                                            <!-- Bulk Stock controls -->
-                                            <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
-                                                <form hx-post="{% url 'admin_update_inventory' %}" hx-swap="none" style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="target_type" value="bulk">
-                                                    <input type="hidden" name="product_id" value="{{ product.id }}">
-                                                    <div style="font-weight: 600; font-size: 0.85rem; min-width: 80px;">
-                                                        {{ product.bulk_stock }} {{ product.bulk_unit }}
-                                                    </div>
-                                                    <input type="number" step="0.01" name="value" value="{{ product.bulk_stock }}" required
-                                                           style="width: 70px; height: 28px; border: 1px solid var(--border-color); border-radius: 4px; padding: 0 0.4rem; font-size: 0.8rem; background-color: var(--input-bg); color: var(--text-primary); text-align: center;">
-                                                    <button type="submit" class="btn-primary" style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; font-weight: 600;">
-                                                        Update
-                                                    </button>
-                                                </form>
-
-                                                <!-- Unit configuration dropdown -->
-                                                <form hx-post="{% url 'admin_update_inventory' %}" hx-swap="none" style="display: flex; align-items: center; margin: 0;">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="target_type" value="product_config">
-                                                    <input type="hidden" name="product_id" value="{{ product.id }}">
-                                                    <select name="bulk_unit" 
-                                                            hx-post="{% url 'admin_update_inventory' %}"
-                                                            hx-swap="none"
-                                                            style="height: 28px; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 0.2rem; font-size: 0.75rem; outline: none; background-color: var(--bg-card); cursor: pointer; color: var(--text-secondary);">
-                                                        <option value="kg" {% if product.bulk_unit == 'kg' %}selected{% endif %}>kg</option>
-                                                        <option value="g" {% if product.bulk_unit == 'g' %}selected{% endif %}>g</option>
-                                                        <option value="l" {% if product.bulk_unit == 'l' %}selected{% endif %}>Litre</option>
-                                                        <option value="ml" {% if product.bulk_unit == 'ml' %}selected{% endif %}>ml</option>
-                                                        <option value="piece" {% if product.bulk_unit == 'piece' %}selected{% endif %}>Piece</option>
-                                                    </select>
-                                                </form>
-
-                                                <!-- Inline Add Slab button -->
-                                                <button @click="activeProductIdForSlab = '{{ product.id }}'; activeProductNameForSlab = '{{ product.name_en|escapejs }}'; showAddSlabModal = true;" class="btn-primary" style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; background-color: var(--dark-brown);">
-                                                    <i class="fa-solid fa-plus"></i> Add Slab
-                                                </button>
-                                            </div>
-                                        {% else %}
-                                            <!-- Packaged Slabs controls -->
-                                            <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-                                                {% for slab in product.price_slabs.all %}
-                                                    <form hx-post="{% url 'admin_update_inventory' %}" hx-swap="none" style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
-                                                        {% csrf_token %}
-                                                        <input type="hidden" name="target_type" value="packaged">
-                                                        <input type="hidden" name="slab_id" value="{{ slab.id }}">
-                                                        <div style="font-size: 0.75rem; min-width: 140px; color: var(--text-secondary);">
-                                                            {{ slab.quantity_value }} {{ slab.get_quantity_unit_display }} (₹{{ slab.price }})
+                                        </td>
+                                        <td style="padding: 0.8rem 1rem;">
+                                            {% if product.inventory_type == 'bulk' %}
+                                                <!-- Bulk Stock controls -->
+                                                <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+                                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                                                        <div style="font-weight: 600; font-size: 0.85rem; min-width: 80px;">
+                                                            {{ product.bulk_stock }} {{ product.bulk_unit }}
                                                         </div>
-                                                        <div style="font-weight: 600; font-size: 0.8rem; min-width: 80px;">
-                                                            {{ slab.stock }} packs
-                                                        </div>
-                                                        <input type="number" name="value" value="{{ slab.stock }}" required
-                                                               style="width: 60px; height: 26px; border: 1px solid var(--border-color); border-radius: 4px; padding: 0 0.4rem; font-size: 0.75rem; background-color: var(--input-bg); color: var(--text-primary); text-align: center;">
-                                                        <button type="submit" class="btn-primary" style="height: 26px; padding: 0 0.6rem; font-size: 0.7rem; width: auto; font-weight: 600; background-color: var(--dark-brown);">
+                                                        <input type="number" step="0.01" name="bulk_stock_{{ product.id }}" value="{{ product.bulk_stock }}" required
+                                                               style="width: 75px; height: 28px; border: 1px solid var(--border-color); border-radius: 4px; padding: 0 0.4rem; font-size: 0.8rem; background-color: var(--input-bg); color: var(--text-primary); text-align: center;">
+                                                        <button type="button" 
+                                                                hx-post="{% url 'admin_update_inventory' %}"
+                                                                hx-vals='{"target_type": "bulk", "product_id": "{{ product.id }}"}'
+                                                                hx-include="[name='bulk_stock_{{ product.id }}']"
+                                                                hx-swap="none"
+                                                                class="btn-primary" style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; font-weight: 600;">
                                                             Update
                                                         </button>
-                                                    </form>
-                                                {% endfor %}
-                                                
-                                                <div style="margin-top: 0.2rem;">
-                                                    <button @click="activeProductIdForSlab = '{{ product.id }}'; activeProductNameForSlab = '{{ product.name_en|escapejs }}'; showAddSlabModal = true;" class="btn-primary" style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; background-color: var(--dark-brown);">
-                                                        <i class="fa-solid fa-plus"></i> Add Price Slab
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="4" style="text-align: center; color: #887B75; padding: 2rem;">No products configured in the system.</td>
-                            </tr>
-                        {% endif %}
                     </tbody>
                 </table>
             </div>

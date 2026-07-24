@@ -24,6 +24,7 @@
 <div x-data="{ 
     searchQuery: '', 
     menuOpen: false,
+    showAddedToast: false,
     matchesSearch(nameEn, nameTa, descEn, descTa) {
         if (!this.searchQuery || this.searchQuery.trim() === '') return true;
         const q = this.searchQuery.toLowerCase().trim();
@@ -40,6 +41,17 @@
         }
     }
 }">
+
+    <!-- Quiet Added to Cart Toast Notification -->
+    <div x-show="showAddedToast" 
+         style="position: fixed; top: 75px; right: 20px; z-index: 150; background-color: var(--text-primary); color: var(--bg-base); padding: 0.75rem 1.2rem; border-radius: 14px; font-weight: 600; font-size: 0.85rem; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 0.6rem; animation: slideIn 0.3s ease;"
+         x-cloak>
+        <i class="fa-solid fa-circle-check" style="color: #34c759; font-size: 1.1rem;"></i>
+        <div>
+            <span x-show="lang === 'en' || lang === 'both'">Item added to cart!</span>
+            <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.75rem; display: block;' : ''">கூடையில் சேர்க்கப்பட்டது!</span>
+        </div>
+    </div>
 
     <!-- Live Search Bar Component -->
     <div class="search-bar-container">
@@ -119,6 +131,7 @@
                                  x-show="matchesSearch('{{ product.name_en|escapejs }}', '{{ product.name_ta|escapejs }}', '{{ product.description_en|escapejs }}', '{{ product.description_ta|escapejs }}')"
                                  x-data="{ 
                                 selectedSlab: {% if product.price_slabs.all %}'{{ product.price_slabs.first.id }}'{% else %}''{% endif %},
+                                itemQty: 1,
                                 slabsStock: {
                                     {% for slab in product.price_slabs.all %}
                                     '{{ slab.id }}': {{ slab.get_max_available_quantity }}{% if not forloop.last %},{% endif %}
@@ -158,7 +171,7 @@
                                     {% if product.price_slabs.all %}
                                         <div class="slabs-container">
                                             <div class="slab-label-title">
-                                                <span x-show="lang === 'en' || lang === 'both'">Select Quantity</span>
+                                                <span x-show="lang === 'en' || lang === 'both'">Select Weight / Pack</span>
                                                 <span x-show="lang === 'ta' || lang === 'both'">அளவை தேர்ந்தெடு</span>
                                             </div>
                                             <div class="slabs-grid">
@@ -169,7 +182,7 @@
                                                                value="{{ slab.id }}" 
                                                                {% if forloop.first %}checked{% endif %}
                                                                :disabled="slabsStock['{{ slab.id }}'] === 0"
-                                                               @change="selectedSlab = '{{ slab.id }}'">
+                                                               @change="selectedSlab = '{{ slab.id }}'; itemQty = 1;">
                                                         <span class="slab-btn">
                                                             <span class="slab-price">₹{{ slab.price|floatformat:0 }}</span>
                                                             <span class="slab-qty">{{ slab.quantity_value }} {{ slab.get_quantity_unit_display }}</span>
@@ -179,14 +192,44 @@
                                                 {% endfor %}
                                             </div>
                                         </div>
+
+                                        <!-- Quantity Selector with Limit & Stock Check -->
+                                        <div x-show="slabsStock[selectedSlab] > 0" style="margin-top: 0.6rem; margin-bottom: 0.5rem;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                                <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">
+                                                    <span x-show="lang === 'en' || lang === 'both'">Quantity:</span>
+                                                    <span x-show="lang === 'ta'" class="tamil-text">எண்ணிக்கை:</span>
+                                                </span>
+                                                <div style="display: inline-flex; align-items: center; background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 2px 6px;">
+                                                    <button type="button" 
+                                                            @click="if(itemQty > 1) itemQty--" 
+                                                            :disabled="itemQty <= 1"
+                                                            style="border: none; background: none; color: var(--text-primary); cursor: pointer; width: 26px; height: 26px; font-weight: 700; font-size: 1rem; display: flex; align-items: center; justify-content: center;">-</button>
+                                                    <span x-text="itemQty" style="font-weight: 700; font-size: 0.85rem; padding: 0 0.5rem; min-width: 20px; text-align: center;"></span>
+                                                    <button type="button" 
+                                                            @click="if(itemQty < (slabsStock[selectedSlab] || 10) && itemQty < 10) itemQty++" 
+                                                            :disabled="itemQty >= (slabsStock[selectedSlab] || 0) || itemQty >= 10"
+                                                            style="border: none; background: none; color: var(--text-primary); cursor: pointer; width: 26px; height: 26px; font-weight: 700; font-size: 1rem; display: flex; align-items: center; justify-content: center;">+</button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Limit Warnings -->
+                                            <div x-show="itemQty >= (slabsStock[selectedSlab] || 0)" style="font-size: 0.7rem; color: var(--danger-color); font-weight: 600; margin-top: 0.2rem; text-align: right;" x-cloak>
+                                                ⚠️ Stock limit reached (Max <span x-text="slabsStock[selectedSlab]"></span>)
+                                            </div>
+                                            <div x-show="itemQty >= 10 && itemQty < (slabsStock[selectedSlab] || 0)" style="font-size: 0.7rem; color: var(--warning-color); font-weight: 600; margin-top: 0.2rem; text-align: right;" x-cloak>
+                                                ⚠️ Max order limit reached (10 per item)
+                                            </div>
+                                        </div>
                                         
-                                        <!-- Add to Cart Form -->
+                                        <!-- Add to Cart Form (Stays on page without opening drawer) -->
                                         <form hx-post="{% url 'add_to_cart' %}" 
                                               hx-swap="none" 
-                                              @submit="cartOpen = true"
+                                              @submit="showAddedToast = true; setTimeout(() => showAddedToast = false, 2500)"
                                               style="margin-top: auto;">
                                             {% csrf_token %}
                                             <input type="hidden" name="slab_id" :value="selectedSlab">
+                                            <input type="hidden" name="quantity" :value="itemQty">
                                             
                                             <!-- Active Add to Cart button -->
                                             <button type="submit" class="btn-primary" x-show="slabsStock[selectedSlab] > 0">
