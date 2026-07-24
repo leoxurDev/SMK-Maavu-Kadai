@@ -55,10 +55,20 @@
             <!-- STEP 2: OTP Verification entry -->
             
             {% if otp_preview %}
-            <!-- Sandbox helper alert displaying the OTP to prevent needing shell lookups -->
-            <div style="background-color: rgba(48,209,88,0.1); border: 1px solid rgba(48,209,88,0.3); border-radius: 8px; padding: 0.8rem; margin-bottom: 1.2rem; text-align: center;">
-                <span style="font-size: 0.75rem; color: var(--success-color); font-weight: 700; display: block; margin-bottom: 0.2rem;">TESTING SIMULATION OTP</span>
-                <span style="font-size: 1.25rem; font-weight: 800; letter-spacing: 4px; color: var(--text-primary);">{{ otp_preview }}</span>
+            <!-- Free Verification Code Box -->
+            <div style="background-color: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; text-align: center; box-shadow: var(--shadow-sm);">
+                <div style="font-size: 0.75rem; color: #166534; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.3rem;">
+                    <i class="fa-solid fa-key" style="color: var(--banana-leaf);"></i>
+                    <span x-show="lang === 'en' || lang === 'both'">Your Login Verification Code</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">உங்கள் உள்நுழைவு OTP குறியீடு</span>
+                </div>
+                <div style="font-size: 1.6rem; font-weight: 800; letter-spacing: 8px; color: #15803d; font-family: monospace; background: white; padding: 0.4rem 1rem; border-radius: 8px; display: inline-block; border: 1px solid #86efac; margin: 0.2rem 0;">
+                    {{ otp_preview }}
+                </div>
+                <div style="font-size: 0.75rem; color: #166534; font-weight: 600; margin-top: 0.3rem;">
+                    <span x-show="lang === 'en' || lang === 'both'">Please enter <strong>{{ otp_preview }}</strong> below to log in immediately.</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">உள்நுழைய <strong>{{ otp_preview }}</strong> குறியீட்டை உள்ளிடவும்.</span>
+                </div>
             </div>
             {% endif %}
 
@@ -85,11 +95,48 @@
                     <span x-show="lang === 'en' || lang === 'both'">Verify & Sign In</span>
                     <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">சரிபார்த்து உள்நுழை</span>
                 </button>
-
-                <a href="{% url 'customer_login' %}" style="font-size: 0.75rem; text-align: center; text-decoration: none; color: var(--text-secondary); font-weight: 600;">
-                    <i class="fa-solid fa-rotate-left"></i> Change phone number
-                </a>
             </form>
+
+            <!-- 60-Second Resend OTP Timer & Cooldown -->
+            <div x-data="{ countdown: 60, canResend: false }" x-init="
+                const timer = setInterval(() => {
+                    if (countdown > 0) {
+                        countdown--;
+                    } else {
+                        canResend = true;
+                        clearInterval(timer);
+                    }
+                }, 1000);
+            " style="margin-top: 1rem; text-align: center;">
+                <form method="POST" action="{% url 'customer_login' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="phone_number" value="{{ phone_number }}">
+                    <button type="submit" 
+                            :disabled="!canResend" 
+                            style="width: 100%; height: 38px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; border: 1px solid var(--border-color); background-color: var(--bg-card); cursor: pointer; color: var(--text-primary); transition: var(--transition-smooth); display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                            :style="!canResend ? 'opacity: 0.6; cursor: not-allowed; background-color: #f5f5f7;' : 'background-color: var(--rice-cream); border-color: var(--dark-brown);'">
+                        <i class="fa-solid fa-rotate-right" :class="!canResend ? 'fa-spin' : ''"></i>
+                        <template x-if="!canResend">
+                            <span>
+                                <span x-show="lang === 'en' || lang === 'both'">Resend OTP Code in <strong x-text="countdown"></strong>s</span>
+                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text"><strong x-text="countdown"></strong> வினாடிகளில் மீண்டும் அனுப்பு</span>
+                            </span>
+                        </template>
+                        <template x-if="canResend">
+                            <span>
+                                <span x-show="lang === 'en' || lang === 'both'">Resend OTP Code Now</span>
+                                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">இப்போது மீண்டும் OTP அனுப்பு</span>
+                            </span>
+                        </template>
+                    </button>
+                </form>
+
+                <div style="margin-top: 0.8rem;">
+                    <a href="{% url 'customer_login' %}" style="font-size: 0.75rem; text-decoration: none; color: var(--text-secondary); font-weight: 600;">
+                        <i class="fa-solid fa-rotate-left"></i> Change phone number
+                    </a>
+                </div>
+            </div>
         {% endif %}
 
     </div>
