@@ -377,7 +377,7 @@
         </div>
 
         <!-- TAB 2: PAYMENT RECONCILIATION -->
-        <div x-show="currentTab === 'reconciliation'" style="display: none;">
+        <div x-show="currentTab === 'reconciliation'">
 
             <div class="table-container">
                 <table class="dash-table">
@@ -430,7 +430,7 @@
         </div>
 
         <!-- TAB 3: ANALYTICS SUMMARY -->
-        <div x-show="currentTab === 'analytics'" style="display: none;">
+        <div x-show="currentTab === 'analytics'">
 
             <!-- Cards Grid -->
             <div
@@ -536,8 +536,8 @@
 
         </div>
 
-        <!-- TAB 4: ACTIVE DELIVERIES MAPS -->
-        <div x-show="currentTab === 'deliveries'" style="display: none;">
+        <!-- TAB 4: ACTIVE DELIVERIES MAP & DISPATCH -->
+        <div x-show="currentTab === 'deliveries'">
 
             <div class="table-container">
                 <table class="dash-table">
@@ -621,30 +621,32 @@
         </div>
 
         <!-- TAB 5: INVENTORY MANAGEMENT -->
-        <div x-show="currentTab === 'inventory'" x-data="{ inventorySearch: '' }" style="display: none;">
-            <div id="inventory-tab-content" hx-get="{% url 'admin_dashboard' %}" hx-trigger="inventoryUpdated from:body"
-                hx-select="#inventory-tab-content" hx-swap="outerHTML">
+        <div x-show="currentTab === 'inventory'" x-data="{ inventorySearch: '' }">
 
-                <form hx-post="{% url 'admin_bulk_update_inventory' %}" hx-swap="none" style="margin: 0;">
+            <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 14px; padding: 1.5rem; box-shadow: var(--shadow-sm); margin-bottom: 1.5rem;">
+                <form hx-post="{% url 'admin_bulk_update_inventory' %}" hx-swap="none">
                     {% csrf_token %}
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.8rem;">
-                        <h3
-                            style="font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.2rem; margin: 0;">
-                            Inventory Stock Control</h3>
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <button type="submit" class="btn-primary"
-                                style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: #2e7d32;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;">
+                        <h3 style="font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.15rem; margin: 0;">
+                            Inventory Stock Control
+                        </h3>
+                        <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+                            <button type="submit" class="btn-primary" style="height: 38px; width: auto; background-color: #2e7d32; font-weight: 700; padding: 0 1.2rem; border-radius: 8px;">
                                 <i class="fa-solid fa-floppy-disk"></i> Save All Inventory Changes
                             </button>
-                            <button type="button" hx-post="{% url 'admin_clear_inventory' %}"
-                                hx-confirm="Are you sure you want to reset all product and slab stocks to 0?"
-                                hx-swap="none" class="btn-primary"
-                                style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--terracotta);">
+                            <button type="button" 
+                                    hx-post="{% url 'admin_clear_inventory' %}"
+                                    hx-confirm="Are you sure you want to reset all stock levels to 0.00?"
+                                    hx-swap="none"
+                                    class="btn-primary" 
+                                    style="height: 38px; width: auto; background-color: var(--accent-color); font-weight: 700; padding: 0 1rem; border-radius: 8px;">
                                 <i class="fa-solid fa-trash-can"></i> Clear Stock to 0
                             </button>
-                            <button type="button" @click="showAddProductModal = true" class="btn-primary"
-                                style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--banana-leaf);">
+                            <button type="button" 
+                                    @click="showAddProductModal = true" 
+                                    class="btn-primary" 
+                                    style="height: 38px; width: auto; background-color: var(--banana-leaf); font-weight: 700; padding: 0 1rem; border-radius: 8px;">
                                 <i class="fa-solid fa-plus"></i> Add New Product
                             </button>
                         </div>
@@ -783,9 +785,10 @@
                     </div>
                 </form>
             </div>
+        </div>
 
         <!-- TAB 6: REPORTS & SMTP MAIL -->
-        <div x-show="currentTab === 'reports'" style="display: none;">
+        <div x-show="currentTab === 'reports'">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
                 
                 <!-- Custom Report Generator Card -->
