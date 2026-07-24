@@ -1819,29 +1819,55 @@ def admin_send_test_email_report(request):
 
     try:
         config = SmtpConfig.objects.first()
-        if not config or not config.smtp_user or not config.recipient_email:
-            return HttpResponse('<div style="padding: 0.8rem; background-color: #feecdc; border: 1px solid #fbd5a5; color: #b43403; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Please configure SMTP User and Recipient Email first!</div>', status=400)
+        if not config:
+            config = SmtpConfig()
+
+        post_host = request.POST.get('smtp_host', '').strip()
+        post_port = request.POST.get('smtp_port', '').strip()
+        post_user = request.POST.get('smtp_user', '').strip()
+        post_pass = request.POST.get('smtp_password', '').strip()
+        post_recip = request.POST.get('recipient_email', '').strip()
+
+        smtp_host = post_host or config.smtp_host or 'smtp.gmail.com'
+        try:
+            smtp_port = int(post_port) if post_port else (config.smtp_port or 587)
+        except ValueError:
+            smtp_port = 587
+        smtp_user = post_user or config.smtp_user or ''
+        smtp_password = post_pass or config.smtp_password or ''
+        recipient_email = post_recip or config.recipient_email or ''
+
+        if not smtp_user or not recipient_email:
+            return HttpResponse('<div style="padding: 0.8rem; background-color: #feecdc; border: 1px solid #fbd5a5; color: #b43403; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Please enter your SMTP Username and Recipient Email address first!</div>', status=400)
         
+        config.smtp_host = smtp_host
+        config.smtp_port = smtp_port
+        config.smtp_user = smtp_user
+        if smtp_password:
+            config.smtp_password = smtp_password
+        config.recipient_email = recipient_email
+        config.save()
+
         from django.test import RequestFactory
         req = RequestFactory().get('/admin-dashboard/generate-report/?format=pdf')
         req.user = request.user
         pdf_response = admin_generate_report(req)
         pdf_data = pdf_response.content
         
-        use_ssl = (config.smtp_port == 465)
-        use_tls = (config.smtp_port == 587 or config.use_tls) if not use_ssl else False
+        use_ssl = (smtp_port == 465)
+        use_tls = (smtp_port == 587 or getattr(config, 'use_tls', True)) if not use_ssl else False
         
         connection = get_connection(
-            host=config.smtp_host,
-            port=config.smtp_port,
-            username=config.smtp_user,
-            password=config.smtp_password,
+            host=smtp_host,
+            port=smtp_port,
+            username=smtp_user,
+            password=smtp_password,
             use_tls=use_tls,
             use_ssl=use_ssl,
             timeout=10
         )
         
-        recipients = [e.strip() for e in config.recipient_email.split(',') if e.strip()]
+        recipients = [e.strip() for e in recipient_email.split(',') if e.strip()]
         
         now_str = timezone.localtime(timezone.now()).strftime('%d %b %Y, %I:%M %p')
         today_date = timezone.localtime(timezone.now()).date()

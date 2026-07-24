@@ -901,8 +901,11 @@
                             </button>
                             <button type="button" 
                                     hx-post="{% url 'admin_send_test_email_report' %}" 
+                                    hx-include="closest form"
                                     hx-target="#smtp-feedback-msg"
                                     hx-swap="innerHTML"
+                                    hx-disabled-elt="this"
+                                    onclick="document.getElementById('smtp-feedback-msg').innerHTML='<div style=\'padding: 0.8rem; background-color: #ebf5ff; border: 1px solid #a4cafe; color: #1e429f; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;\'><i class=\'fa-solid fa-spinner fa-spin\'></i> Connecting to SMTP server & sending email report... Please wait...</div>'"
                                     class="btn-primary" style="flex: 1.5; height: 40px; font-weight: 700; border-radius: 8px; background-color: var(--accent-color);">
                                 <i class="fa-solid fa-paper-plane"></i> Send Email Now
                             </button>
