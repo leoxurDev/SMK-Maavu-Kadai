@@ -785,7 +785,7 @@ import os
 import sys
 
 def send_sms_otp(phone_number, otp):
-    # 1. Try sending via Email SMTP if SmtpConfig is set up
+    # Try sending via Email SMTP if SmtpConfig is set up
     try:
         from shop.models import SmtpConfig
         config = SmtpConfig.objects.first()
@@ -828,38 +828,6 @@ def send_sms_otp(phone_number, otp):
                 print(f"[OTP SERVICE] Sent Email OTP {otp} for {phone_number} to {recipients}", file=sys.stderr)
     except Exception as e:
         print(f"[OTP SERVICE] Email OTP dispatch error: {e}", file=sys.stderr)
-
-    # 2. Try sending via 100% Free Telegram Bot API
-    telegram_token = os.getenv('TELEGRAM_BOT_TOKEN')
-    telegram_chat_id = os.getenv('TELEGRAM_CHAT_ID')
-    if telegram_token and telegram_chat_id:
-        try:
-            tg_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
-            tg_data = urllib.parse.urlencode({
-                'chat_id': telegram_chat_id,
-                'text': f"🔑 *SMK Flour Shop Login OTP*\nPhone: `{phone_number}`\nVerification Code: `{otp}`",
-                'parse_mode': 'Markdown'
-            }).encode('utf-8')
-            tg_req = urllib.request.Request(tg_url, data=tg_data, method='POST')
-            with urllib.request.urlopen(tg_req, timeout=5) as resp:
-                print(f"[OTP SERVICE] Sent Telegram OTP {otp} for {phone_number}", file=sys.stderr)
-        except Exception as e:
-            print(f"[OTP SERVICE] Telegram OTP dispatch error: {e}", file=sys.stderr)
-
-    # 3. Try sending via Free Android SMS Gateway Webhook
-    sms_gateway_url = os.getenv('SMS_GATEWAY_URL')
-    if sms_gateway_url:
-        try:
-            gw_data = json.dumps({
-                'to': phone_number,
-                'message': f"Your SMK Flour Shop verification code is {otp}.",
-                'otp': otp
-            }).encode('utf-8')
-            gw_req = urllib.request.Request(sms_gateway_url, data=gw_data, headers={'Content-Type': 'application/json'}, method='POST')
-            with urllib.request.urlopen(gw_req, timeout=5) as resp:
-                print(f"[OTP SERVICE] Sent Android SMS Gateway OTP {otp} for {phone_number}", file=sys.stderr)
-        except Exception as e:
-            print(f"[OTP SERVICE] Android SMS Gateway error: {e}", file=sys.stderr)
 
     sms_provider = os.getenv('SMS_PROVIDER', 'none').lower().strip()
     if sms_provider == 'none' and os.getenv('TWILIO_ACCOUNT_SID'):
