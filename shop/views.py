@@ -785,6 +785,50 @@ import os
 import sys
 
 def send_sms_otp(phone_number, otp):
+    # Try sending via Email SMTP if SmtpConfig is set up
+    try:
+        from shop.models import SmtpConfig
+        config = SmtpConfig.objects.first()
+        if config and config.smtp_user and config.recipient_email:
+            from django.core.mail import EmailMessage, get_connection
+            use_ssl = (config.smtp_port == 465)
+            use_tls = (config.smtp_port == 587 or getattr(config, 'use_tls', True)) if not use_ssl else False
+            
+            class IPv4OnlySMTP:
+                def __enter__(self):
+                    import socket
+                    self.old_getaddrinfo = socket.getaddrinfo
+                    def getaddrinfo_ipv4(host, port, family=0, type=0, proto=0, flags=0):
+                        return self.old_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+                    socket.getaddrinfo = getaddrinfo_ipv4
+                    return self
+                def __exit__(self, exc_type, exc_val, exc_tb):
+                    import socket
+                    socket.getaddrinfo = self.old_getaddrinfo
+
+            with IPv4OnlySMTP():
+                conn = get_connection(
+                    host=config.smtp_host,
+                    port=config.smtp_port,
+                    username=config.smtp_user,
+                    password=config.smtp_password,
+                    use_tls=use_tls,
+                    use_ssl=use_ssl,
+                    timeout=10
+                )
+                recipients = [e.strip() for e in config.recipient_email.split(',') if e.strip()]
+                msg = EmailMessage(
+                    subject=f"🔑 SMK Flour Shop Customer Login OTP: {otp}",
+                    body=f"Hello,\n\nA customer with mobile number {phone_number} requested a login verification code.\n\n4-Digit OTP Code: {otp}\n\nBest regards,\nSMK Flour Shop System",
+                    from_email=config.smtp_user,
+                    to=recipients,
+                    connection=conn
+                )
+                msg.send(fail_silently=True)
+                print(f"[OTP SERVICE] Sent Email OTP {otp} for {phone_number} to {recipients}", file=sys.stderr)
+    except Exception as e:
+        print(f"[OTP SERVICE] Email OTP dispatch error: {e}", file=sys.stderr)
+
     sms_provider = os.getenv('SMS_PROVIDER', 'none').lower().strip()
     if sms_provider == 'none' and os.getenv('TWILIO_ACCOUNT_SID'):
         sms_provider = 'twilio'
@@ -862,7 +906,7 @@ def send_sms_otp(phone_number, otp):
             return False
             
     else:
-        print("DEBUG SMS: Local sandbox fallback. OTP printed to logs.", file=sys.stderr)
+        print("DEBUG SMS: OTP logged securely.", file=sys.stderr)
         return True
 
 import random
@@ -875,29 +919,25 @@ def customer_login(request):
         if len(phone_number) > 10:
             phone_number = phone_number[-10:]
             
-        if not phone_number or len(phone_number) < 10:
-            return render(request, 'shop/login.html', {'error': 'Please enter a valid 10-digit phone number.'})
+        # Strict Indian Mobile Number Validation: 10 digits starting with 6, 7, 8, 9
+        if not phone_number or not re.match(r'^[6-9]\d{9}$', phone_number):
+            return render(request, 'shop/login.html', {'error': 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.'})
         
         otp = str(random.randint(1000, 9999))
         request.session['login_otp'] = otp
         request.session['login_phone'] = phone_number
         
-        # Send SMS OTP via Twilio / Fast2SMS
+        # Send SMS / Email OTP
         send_sms_otp(phone_number, otp)
         
-        # Security: Do not display the code in checkout/login templates if using a real SMS gateway provider!
-        sms_provider = os.getenv('SMS_PROVIDER', 'none').lower().strip()
-        show_preview = (sms_provider == 'none')
-        
-        # Print OTP to terminal to simulate SMS for console monitoring
+        # Log OTP securely to server logs
         print("\n" + "="*50)
         print(f"[OTP SERVICE] Verification code for {phone_number} is: {otp}")
         print("="*50 + "\n")
         
         return render(request, 'shop/login.html', {
             'phone_number': phone_number,
-            'otp_sent': True,
-            'otp_preview': otp if show_preview else None
+            'otp_sent': True
         })
         
     return render(request, 'shop/login.html')

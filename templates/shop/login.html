@@ -54,23 +54,11 @@
         {% else %}
             <!-- STEP 2: OTP Verification entry -->
             
-            {% if otp_preview %}
-            <!-- Free Verification Code Box -->
-            <div style="background-color: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; text-align: center; box-shadow: var(--shadow-sm);">
-                <div style="font-size: 0.75rem; color: #166534; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.3rem;">
-                    <i class="fa-solid fa-key" style="color: var(--banana-leaf);"></i>
-                    <span x-show="lang === 'en' || lang === 'both'">Your Login Verification Code</span>
-                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">உங்கள் உள்நுழைவு OTP குறியீடு</span>
-                </div>
-                <div style="font-size: 1.6rem; font-weight: 800; letter-spacing: 8px; color: #15803d; font-family: monospace; background: white; padding: 0.4rem 1rem; border-radius: 8px; display: inline-block; border: 1px solid #86efac; margin: 0.2rem 0;">
-                    {{ otp_preview }}
-                </div>
-                <div style="font-size: 0.75rem; color: #166534; font-weight: 600; margin-top: 0.3rem;">
-                    <span x-show="lang === 'en' || lang === 'both'">Please enter <strong>{{ otp_preview }}</strong> below to log in immediately.</span>
-                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">உள்நுழைய <strong>{{ otp_preview }}</strong> குறியீட்டை உள்ளிடவும்.</span>
-                </div>
+            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 0.8rem; margin-bottom: 1.2rem; text-align: center; font-size: 0.8rem; color: #166534; font-weight: 600;">
+                <i class="fa-solid fa-shield-halved" style="color: var(--banana-leaf);"></i>
+                <span x-show="lang === 'en' || lang === 'both'">Verification code sent to <strong>+91 {{ phone_number }}</strong></span>
+                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text"><strong>+91 {{ phone_number }}</strong> எண்ணிற்கு OTP அனுப்பப்பட்டது</span>
             </div>
-            {% endif %}
 
             <form method="POST" action="{% url 'verify_otp' %}" style="display: flex; flex-direction: column; gap: 1.2rem;">
                 {% csrf_token %}
