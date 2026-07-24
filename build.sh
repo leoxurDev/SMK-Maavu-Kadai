@@ -10,6 +10,10 @@ pip install -r requirements.txt
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
+echo "Syncing media folder to staticfiles..."
+mkdir -p staticfiles/media
+cp -r media/. staticfiles/media/ 2>/dev/null || true
+
 echo "Running database migrations..."
 python manage.py migrate
 
