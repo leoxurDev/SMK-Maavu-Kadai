@@ -638,11 +638,71 @@
                                                                 class="btn-primary" style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; font-weight: 600;">
                                                             Update
                                                         </button>
-                    </tbody>
-                </table>
-            </div>
-            
-            </div>
+                                                    </div>
+
+                                                    <!-- Unit configuration dropdown -->
+                                                    <div style="display: flex; align-items: center; margin: 0;">
+                                                        <select name="bulk_unit" 
+                                                                hx-post="{% url 'admin_update_inventory' %}"
+                                                                hx-vals='{"target_type": "product_config", "product_id": "{{ product.id }}"}'
+                                                                hx-swap="none"
+                                                                style="height: 28px; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 0.2rem; font-size: 0.75rem; outline: none; background-color: var(--bg-card); cursor: pointer; color: var(--text-secondary);">
+                                                            <option value="kg" {% if product.bulk_unit == 'kg' %}selected{% endif %}>kg</option>
+                                                            <option value="g" {% if product.bulk_unit == 'g' %}selected{% endif %}>g</option>
+                                                            <option value="l" {% if product.bulk_unit == 'l' %}selected{% endif %}>Litre</option>
+                                                            <option value="ml" {% if product.bulk_unit == 'ml' %}selected{% endif %}>ml</option>
+                                                            <option value="piece" {% if product.bulk_unit == 'piece' %}selected{% endif %}>Piece</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Inline Add Slab button -->
+                                                    <button type="button" @click="activeProductIdForSlab = '{{ product.id }}'; activeProductNameForSlab = '{{ product.name_en|escapejs }}'; showAddSlabModal = true;" class="btn-primary" style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; background-color: var(--dark-brown);">
+                                                        <i class="fa-solid fa-plus"></i> Add Slab
+                                                    </button>
+                                                </div>
+                                            {% else %}
+                                                <!-- Packaged Slabs controls -->
+                                                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                                                    {% for slab in product.price_slabs.all %}
+                                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                                                            <div style="font-size: 0.75rem; min-width: 140px; color: var(--text-secondary);">
+                                                                {{ slab.quantity_value }} {{ slab.get_quantity_unit_display }} (₹{{ slab.price }})
+                                                            </div>
+                                                            <div style="font-weight: 600; font-size: 0.8rem; min-width: 80px;">
+                                                                {{ slab.stock }} packs
+                                                            </div>
+                                                            <input type="number" name="slab_stock_{{ slab.id }}" value="{{ slab.stock }}" required
+                                                                   style="width: 65px; height: 26px; border: 1px solid var(--border-color); border-radius: 4px; padding: 0 0.4rem; font-size: 0.75rem; background-color: var(--input-bg); color: var(--text-primary); text-align: center;">
+                                                            <button type="button" 
+                                                                    hx-post="{% url 'admin_update_inventory' %}"
+                                                                    hx-vals='{"target_type": "packaged", "slab_id": "{{ slab.id }}"}'
+                                                                    hx-include="[name='slab_stock_{{ slab.id }}']"
+                                                                    hx-swap="none"
+                                                                    class="btn-primary" style="height: 26px; padding: 0 0.6rem; font-size: 0.7rem; width: auto; font-weight: 600; background-color: var(--dark-brown);">
+                                                                Update
+                                                            </button>
+                                                        </div>
+                                                    {% endfor %}
+                                                    
+                                                    <div style="margin-top: 0.2rem;">
+                                                        <button type="button" @click="activeProductIdForSlab = '{{ product.id }}'; activeProductNameForSlab = '{{ product.name_en|escapejs }}'; showAddSlabModal = true;" class="btn-primary" style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; background-color: var(--dark-brown);">
+                                                            <i class="fa-solid fa-plus"></i> Add Price Slab
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: #887B75; padding: 2rem;">No products configured in the system.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
         </div>
 
         <!-- Add Product Popup Modal -->
