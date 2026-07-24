@@ -1,27 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMK Flour Shop - Operations Dashboard</title>
-    
+
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Styles -->
     <link rel="stylesheet" href="/static/css/index.css">
-    
+
     <!-- JS dependencies -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <style>
         .dash-container {
             max-width: 1000px;
             margin: 1.5rem auto;
             padding: 0 1rem;
         }
+
         .dash-tabs {
             display: flex;
             gap: 0.5rem;
@@ -30,6 +32,7 @@
             margin-bottom: 1.5rem;
             overflow-x: auto;
         }
+
         .dash-tab-btn {
             background: none;
             border: none;
@@ -42,14 +45,17 @@
             white-space: nowrap;
             transition: var(--transition-smooth);
         }
+
         .dash-tab-btn:hover {
             background-color: var(--rice-cream);
             color: var(--dark-brown);
         }
+
         .dash-tab-btn.active {
             background-color: var(--terracotta);
             color: white;
         }
+
         .metric-card {
             background-color: white;
             border: 1px solid var(--border-color);
@@ -59,6 +65,7 @@
             flex-direction: column;
             box-shadow: var(--shadow-sm);
         }
+
         .metric-title {
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -67,11 +74,13 @@
             font-weight: 700;
             margin-bottom: 0.3rem;
         }
+
         .metric-value {
             font-size: 1.6rem;
             font-weight: 800;
             color: var(--dark-brown);
         }
+
         .table-container {
             background-color: white;
             border: 1px solid var(--border-color);
@@ -79,12 +88,14 @@
             overflow: hidden;
             box-shadow: var(--shadow-sm);
         }
+
         .dash-table {
             width: 100%;
             border-collapse: collapse;
             text-align: left;
             font-size: 0.85rem;
         }
+
         .dash-table th {
             background-color: var(--rice-cream);
             color: var(--dark-brown);
@@ -92,10 +103,12 @@
             padding: 0.8rem 1rem;
             border-bottom: 2px solid var(--border-color);
         }
+
         .dash-table td {
             padding: 0.8rem 1rem;
             vertical-align: middle;
         }
+
         .filter-form {
             display: flex;
             flex-wrap: wrap;
@@ -107,17 +120,21 @@
             margin-bottom: 1.5rem;
             align-items: flex-end;
         }
+
         .form-group-dash {
             display: flex;
             flex-direction: column;
             gap: 0.3rem;
         }
+
         .form-group-dash label {
             font-size: 0.75rem;
             font-weight: 700;
             color: var(--dark-brown);
         }
-        .form-group-dash select, .form-group-dash input {
+
+        .form-group-dash select,
+        .form-group-dash input {
             height: 38px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
@@ -146,40 +163,49 @@
                 align-items: stretch;
             }
 
-            .filter-form > div:last-child {
+            .filter-form>div:last-child {
                 width: 100%;
             }
+
             header {
                 padding: 0.8rem 0;
             }
+
             .header-container {
                 flex-direction: column !important;
                 gap: 0.8rem;
                 text-align: center;
                 align-items: center !important;
             }
+
             .logo-group {
                 flex-direction: column !important;
                 align-items: center !important;
                 text-align: center;
                 gap: 0.3rem !important;
             }
+
             .logo-icon {
                 margin: 0 !important;
             }
+
             .brand-text h1 {
                 font-size: 1.15rem !important;
             }
+
             .brand-text span {
                 font-size: 0.7rem !important;
             }
-            .header-container > div:last-child {
+
+            .header-container>div:last-child {
                 width: 100%;
                 justify-content: center;
             }
+
             .form-group-dash {
                 width: 100% !important;
             }
+
             .form-group-dash select,
             .form-group-dash input {
                 width: 100% !important;
@@ -209,12 +235,17 @@
                 font-size: 1.35rem;
             }
         }
+
         [x-cloak] {
             display: none !important;
         }
     </style>
 </head>
-<body x-data="{ currentTab: localStorage.getItem('adminCurrentTab') || 'orders', lang: 'both', activeItemsOrder: null, showAddProductModal: false, showAddSlabModal: false, activeProductIdForSlab: null, activeProductNameForSlab: '' }" x-init="$watch('currentTab', val => localStorage.setItem('adminCurrentTab', val))" class="light" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+<body
+    x-data="{ currentTab: localStorage.getItem('adminCurrentTab') || 'orders', lang: 'both', activeItemsOrder: null, showAddProductModal: false, showAddSlabModal: false, activeProductIdForSlab: null, activeProductNameForSlab: '' }"
+    x-init="$watch('currentTab', val => localStorage.setItem('adminCurrentTab', val))" class="light"
+    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
     <!-- Header Section -->
     <header>
@@ -226,7 +257,7 @@
                     <span>Operations & Reconciliation Dashboard</span>
                 </div>
             </div>
-            
+
             <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end;">
                 <a href="/admin/" class="category-tab" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
                     <i class="fa-solid fa-cog"></i> Django Admin
@@ -236,29 +267,35 @@
     </header>
 
     <div class="dash-container">
-        
+
         <!-- Tab Navigation Buttons -->
         <div class="dash-tabs">
-            <button class="dash-tab-btn" :class="currentTab === 'orders' ? 'active' : ''" @click="currentTab = 'orders'">
-                <i class="fa-solid fa-clipboard-list"></i> Live Orders ({% if orders %}{{ orders.count }}{% else %}0{% endif %})
+            <button class="dash-tab-btn" :class="currentTab === 'orders' ? 'active' : ''"
+                @click="currentTab = 'orders'">
+                <i class="fa-solid fa-clipboard-list"></i> Live Orders ({% if orders %}{{ orders.count }}{% else %}0{%
+                endif %})
             </button>
-            <button class="dash-tab-btn" :class="currentTab === 'reconciliation' ? 'active' : ''" @click="currentTab = 'reconciliation'">
+            <button class="dash-tab-btn" :class="currentTab === 'reconciliation' ? 'active' : ''"
+                @click="currentTab = 'reconciliation'">
                 <i class="fa-solid fa-money-bill-wave"></i> Payment Reconciliation
             </button>
-            <button class="dash-tab-btn" :class="currentTab === 'analytics' ? 'active' : ''" @click="currentTab = 'analytics'">
+            <button class="dash-tab-btn" :class="currentTab === 'analytics' ? 'active' : ''"
+                @click="currentTab = 'analytics'">
                 <i class="fa-solid fa-chart-line"></i> Analytics Summary
             </button>
-            <button class="dash-tab-btn" :class="currentTab === 'deliveries' ? 'active' : ''" @click="currentTab = 'deliveries'">
+            <button class="dash-tab-btn" :class="currentTab === 'deliveries' ? 'active' : ''"
+                @click="currentTab = 'deliveries'">
                 <i class="fa-solid fa-truck-ramp-box"></i> Active Deliveries ({{ active_deliveries.count }})
             </button>
-            <button class="dash-tab-btn" :class="currentTab === 'inventory' ? 'active' : ''" @click="currentTab = 'inventory'">
+            <button class="dash-tab-btn" :class="currentTab === 'inventory' ? 'active' : ''"
+                @click="currentTab = 'inventory'">
                 <i class="fa-solid fa-boxes-stacked"></i> Inventory Management
             </button>
         </div>
 
         <!-- TAB 1: LIVE ORDERS OPERATIONS -->
         <div x-show="currentTab === 'orders'">
-            
+
             <!-- Filters -->
             <form method="GET" action="." class="filter-form">
                 <div class="form-group-dash">
@@ -266,30 +303,36 @@
                     <select name="status">
                         <option value="">All Statuses</option>
                         {% for code, label in status_choices %}
-                            <option value="{{ code }}" {% if request.GET.status == code %}selected{% endif %}>{{ label }}</option>
+                        <option value="{{ code }}" {% if request.GET.status==code %}selected{% endif %}>{{ label }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
-                
+
                 <div class="form-group-dash">
                     <label>Order Type</label>
                     <select name="order_type">
                         <option value="">All Types</option>
-                        <option value="pickup" {% if request.GET.order_type == 'pickup' %}selected{% endif %}>Store Pickup</option>
-                        <option value="delivery" {% if request.GET.order_type == 'delivery' %}selected{% endif %}>Home Delivery</option>
+                        <option value="pickup" {% if request.GET.order_type=='pickup' %}selected{% endif %}>Store Pickup
+                        </option>
+                        <option value="delivery" {% if request.GET.order_type=='delivery' %}selected{% endif %}>Home
+                            Delivery</option>
                     </select>
                 </div>
 
                 <div class="form-group-dash" style="flex-grow: 1;">
                     <label>Search Order</label>
-                    <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Search ID, Name, Phone...">
+                    <input type="text" name="search" value="{{ request.GET.search }}"
+                        placeholder="Search ID, Name, Phone...">
                 </div>
 
                 <div style="display: flex; gap: 0.4rem;">
-                    <button type="submit" class="btn-primary" style="height: 38px; width: auto; background-color: var(--banana-leaf); padding: 0 1rem; border-radius: 6px;">
+                    <button type="submit" class="btn-primary"
+                        style="height: 38px; width: auto; background-color: var(--banana-leaf); padding: 0 1rem; border-radius: 6px;">
                         <i class="fa-solid fa-filter"></i> Apply
                     </button>
-                    <a href="." class="category-tab" style="height: 38px; display: inline-flex; align-items: center; border-radius: 6px; padding: 0 1rem; text-decoration: none;">
+                    <a href="." class="category-tab"
+                        style="height: 38px; display: inline-flex; align-items: center; border-radius: 6px; padding: 0 1rem; text-decoration: none;">
                         Reset
                     </a>
                 </div>
@@ -309,20 +352,18 @@
                             <th>Actions (Change Status)</th>
                         </tr>
                     </thead>
-                    <tbody id="orders-tbody" 
-                           hx-get="{% url 'admin_dashboard' %}" 
-                           hx-trigger="newOrderReceived from:body" 
-                           hx-target="this" 
-                           hx-select="#orders-tbody tr" 
-                           hx-include=".filter-form">
+                    <tbody id="orders-tbody" hx-get="{% url 'admin_dashboard' %}"
+                        hx-trigger="newOrderReceived from:body" hx-target="this" hx-select="#orders-tbody tr"
+                        hx-include=".filter-form">
                         {% if orders %}
-                            {% for order in orders %}
-                                {% include 'shop/partials/admin_order_row.html' %}
-                            {% endfor %}
+                        {% for order in orders %}
+                        {% include 'shop/partials/admin_order_row.html' %}
+                        {% endfor %}
                         {% else %}
-                            <tr>
-                                <td colspan="7" style="text-align: center; color: #887B75; padding: 2rem;">No orders registered matching filters.</td>
-                            </tr>
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #887B75; padding: 2rem;">No orders
+                                registered matching filters.</td>
+                        </tr>
                         {% endif %}
                     </tbody>
                 </table>
@@ -332,7 +373,7 @@
 
         <!-- TAB 2: PAYMENT RECONCILIATION -->
         <div x-show="currentTab === 'reconciliation'" style="display: none;">
-            
+
             <div class="table-container">
                 <table class="dash-table">
                     <thead>
@@ -348,32 +389,38 @@
                     </thead>
                     <tbody>
                         {% if payments %}
-                            {% for p in payments %}
-                                <tr style="border-bottom: 1px solid var(--border-color);">
-                                    <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ p.order.id }}</td>
-                                    <td style="padding: 0.8rem 1rem;">
-                                        <div style="font-weight: 600;">{{ p.order.customer.name }}</div>
-                                        <div style="font-size: 0.75rem; color: #887B75;">{{ p.order.customer.phone_number }}</div>
-                                    </td>
-                                    <td style="padding: 0.8rem 1rem;">{{ p.get_method_display }}</td>
-                                    <td style="padding: 0.8rem 1rem; font-family: monospace; font-size: 0.8rem; color: #555;">{{ p.gateway_txn_id|default:"N/A (COD)" }}</td>
-                                    <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">₹{{ p.amount }}</td>
-                                    <td style="padding: 0.8rem 1rem;">
-                                        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+                        {% for p in payments %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ p.order.id
+                                }}</td>
+                            <td style="padding: 0.8rem 1rem;">
+                                <div style="font-weight: 600;">{{ p.order.customer.name }}</div>
+                                <div style="font-size: 0.75rem; color: #887B75;">{{ p.order.customer.phone_number }}
+                                </div>
+                            </td>
+                            <td style="padding: 0.8rem 1rem;">{{ p.get_method_display }}</td>
+                            <td style="padding: 0.8rem 1rem; font-family: monospace; font-size: 0.8rem; color: #555;">{{
+                                p.gateway_txn_id|default:"N/A (COD)" }}</td>
+                            <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">₹{{ p.amount
+                                }}</td>
+                            <td style="padding: 0.8rem 1rem;">
+                                <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
                                             {% if p.status == 'completed' %}color: var(--banana-leaf);
                                             {% elif p.status == 'failed' %}color: #C0392B;
                                             {% else %}color: var(--turmeric);
                                             {% endif %}">
-                                            {{ p.get_status_display }}
-                                        </span>
-                                    </td>
-                                    <td style="padding: 0.8rem 1rem; color: #665C58;">{{ p.paid_at|date:"d M Y, h:i A"|default:"Unpaid" }}</td>
-                                </tr>
-                            {% endfor %}
+                                    {{ p.get_status_display }}
+                                </span>
+                            </td>
+                            <td style="padding: 0.8rem 1rem; color: #665C58;">{{ p.paid_at|date:"d M Y, h:i
+                                A"|default:"Unpaid" }}</td>
+                        </tr>
+                        {% endfor %}
                         {% else %}
-                            <tr>
-                                <td colspan="7" style="text-align: center; color: #887B75; padding: 2rem;">No transaction payments captured yet.</td>
-                            </tr>
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #887B75; padding: 2rem;">No transaction
+                                payments captured yet.</td>
+                        </tr>
                         {% endif %}
                     </tbody>
                 </table>
@@ -383,12 +430,14 @@
 
         <!-- TAB 3: ANALYTICS SUMMARY -->
         <div x-show="currentTab === 'analytics'" style="display: none;">
-            
+
             <!-- Cards Grid -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="metric-card">
                     <span class="metric-title">Today's Total Revenue</span>
-                    <span class="metric-value" style="color: var(--banana-leaf);">₹{{ today_sales|floatformat:2 }}</span>
+                    <span class="metric-value" style="color: var(--banana-leaf);">₹{{ today_sales|floatformat:2
+                        }}</span>
                 </div>
                 <div class="metric-card">
                     <span class="metric-title">Today's Orders Placed</span>
@@ -396,49 +445,63 @@
                 </div>
                 <div class="metric-card">
                     <span class="metric-title">Analytics Timeframe</span>
-                    <span class="metric-value" style="font-size: 1.1rem; font-weight: 700; margin-top: auto;">Daily Running Summary</span>
+                    <span class="metric-value" style="font-size: 1.1rem; font-weight: 700; margin-top: auto;">Daily
+                        Running Summary</span>
                 </div>
             </div>
 
             <!-- Best Sellers Table -->
-            <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem;">
-                <h3 style="font-size: 1rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+            <div
+                style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem;">
+                <h3
+                    style="font-size: 1rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
                     அதிகம் விற்பனையானவை / Best Selling Products (Quantity Sum)
                 </h3>
-                
+
                 <table class="dash-table" style="box-shadow: none; border-radius: 0;">
                     <thead>
                         <tr style="background-color: transparent; border-bottom: 1px solid var(--border-color);">
-                            <th style="padding: 0.6rem 0.5rem; background-color: transparent;">Product Name (English / Tamil)</th>
-                            <th style="padding: 0.6rem 0.5rem; background-color: transparent; text-align: right;">Total Units Sold</th>
+                            <th style="padding: 0.6rem 0.5rem; background-color: transparent;">Product Name (English /
+                                Tamil)</th>
+                            <th style="padding: 0.6rem 0.5rem; background-color: transparent; text-align: right;">Total
+                                Units Sold</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if top_products %}
-                            {% for item in top_products %}
-                                <tr style="border-bottom: 1px solid var(--border-color);">
-                                    <td style="padding: 0.8rem 0.5rem;">
-                                        <strong>{{ item.product__name_en }}</strong> 
-                                        <span class="tamil-text" style="color: var(--banana-leaf); font-size: 0.8rem; margin-left: 0.4rem;">{{ item.product__name_ta }}</span>
-                                    </td>
-                                    <td style="padding: 0.8rem 0.5rem; text-align: right; font-weight: 700; color: var(--terracotta);">{{ item.total_qty }} units</td>
-                                </tr>
-                            {% endfor %}
+                        {% for item in top_products %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 0.8rem 0.5rem;">
+                                <strong>{{ item.product__name_en }}</strong>
+                                <span class="tamil-text"
+                                    style="color: var(--banana-leaf); font-size: 0.8rem; margin-left: 0.4rem;">{{
+                                    item.product__name_ta }}</span>
+                            </td>
+                            <td
+                                style="padding: 0.8rem 0.5rem; text-align: right; font-weight: 700; color: var(--terracotta);">
+                                {{ item.total_qty }} units</td>
+                        </tr>
+                        {% endfor %}
                         {% else %}
-                            <tr>
-                                <td colspan="2" style="text-align: center; color: #887B75; padding: 2rem;">No sales data aggregates compiled yet.</td>
-                            </tr>
+                        <tr>
+                            <td colspan="2" style="text-align: center; color: #887B75; padding: 2rem;">No sales data
+                                aggregates compiled yet.</td>
+                        </tr>
                         {% endif %}
                     </tbody>
                 </table>
             </div>
 
             <!-- Charts Grid Layout -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
                 <!-- 1. Daily Sales Trend Line Chart -->
-                <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; box-shadow: var(--shadow-sm);">
-                    <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
-                        <i class="fa-solid fa-chart-line" style="color: var(--banana-leaf);"></i> Daily Revenue (Past 7 Days)
+                <div
+                    style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; box-shadow: var(--shadow-sm);">
+                    <h3
+                        style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-chart-line" style="color: var(--banana-leaf);"></i> Daily Revenue (Past 7
+                        Days)
                     </h3>
                     <div style="position: relative; height: 230px; width: 100%;">
                         <canvas id="salesTrendsChart"></canvas>
@@ -446,9 +509,12 @@
                 </div>
 
                 <!-- 2. Hourly Order Velocity Bar Chart -->
-                <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; box-shadow: var(--shadow-sm);">
-                    <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
-                        <i class="fa-solid fa-clock" style="color: var(--terracotta);"></i> Order Velocity (Today by Hour)
+                <div
+                    style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; box-shadow: var(--shadow-sm);">
+                    <h3
+                        style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-clock" style="color: var(--terracotta);"></i> Order Velocity (Today by
+                        Hour)
                     </h3>
                     <div style="position: relative; height: 230px; width: 100%;">
                         <canvas id="hourlyVelocityChart"></canvas>
@@ -456,9 +522,12 @@
                 </div>
 
                 <!-- 3. Product Sales Doughnut Chart -->
-                <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; box-shadow: var(--shadow-sm);">
-                    <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
-                        <i class="fa-solid fa-chart-pie" style="color: var(--warning-color);"></i> Product Distribution (Top 5)
+                <div
+                    style="background-color: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; box-shadow: var(--shadow-sm);">
+                    <h3
+                        style="font-size: 0.9rem; font-weight: 700; color: var(--dark-brown); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-chart-pie" style="color: var(--warning-color);"></i> Product Distribution
+                        (Top 5)
                     </h3>
                     <div style="position: relative; height: 230px; width: 100%;">
                         <canvas id="productShareChart"></canvas>
@@ -470,7 +539,7 @@
 
         <!-- TAB 4: ACTIVE DELIVERIES MAPS -->
         <div x-show="currentTab === 'deliveries'" style="display: none;">
-            
+
             <div class="table-container">
                 <table class="dash-table">
                     <thead>
@@ -484,66 +553,70 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="deliveries-tbody"
-                           hx-get="{% url 'admin_dashboard' %}"
-                           hx-trigger="newOrderReceived from:body"
-                           hx-target="this"
-                           hx-select="#deliveries-tbody tr">
+                    <tbody id="deliveries-tbody" hx-get="{% url 'admin_dashboard' %}"
+                        hx-trigger="newOrderReceived from:body" hx-target="this" hx-select="#deliveries-tbody tr">
                         {% if active_deliveries %}
-                            {% for order in active_deliveries %}
-                                <tr style="border-bottom: 1px solid var(--border-color);">
-                                    <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ order.id }}</td>
-                                    <td style="padding: 0.8rem 1rem;">
-                                        <div style="font-weight: 600;">{{ order.customer.name }}</div>
-                                        <div style="font-size: 0.75rem; color: #887B75;">{{ order.customer.phone_number }}</div>
-                                    </td>
-                                    <td style="padding: 0.8rem 1rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ order.address.address_text }}">{{ order.address.address_text }}</td>
-                                    <td style="padding: 0.8rem 1rem; color: #665C58;">{{ order.address.landmark|default:"-" }}</td>
-                                    <td style="padding: 0.8rem 1rem; font-family: monospace; font-size: 0.8rem; color: #555;">
-                                        {% if order.address.latitude and order.address.longitude %}
-                                            {{ order.address.latitude }}, {{ order.address.longitude }}
-                                        {% else %}
-                                            No GPS data
-                                        {% endif %}
-                                    </td>
-                                    <td style="padding: 0.8rem 1rem; text-transform: uppercase; font-weight: 700; font-size: 0.75rem; color: var(--terracotta);">
-                                        {{ order.get_status_display }}
-                                    </td>
-                                    <td style="padding: 0.8rem 1rem;">
-                                        <div style="display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start;">
-                                            {% if order.address.latitude and order.address.longitude %}
-                                                <a href="https://www.google.com/maps/search/?api=1&query={{ order.address.latitude }},{{ order.address.longitude }}" 
-                                                   target="_blank" 
-                                                   class="btn-primary" 
-                                                   style="height: 32px; width: auto; padding: 0 0.8rem; font-size: 0.75rem; background-color: var(--banana-leaf); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem;">
-                                                    <i class="fa-solid fa-map-location-dot"></i> View Route Map
-                                                </a>
-                                            {% else %}
-                                                <span style="color: #999; font-size: 0.75rem; font-style: italic;">Cannot map (no GPS)</span>
-                                            {% endif %}
-                                            
-                                            {% if order.payment.status != 'completed' %}
-                                                <button hx-post="{% url 'admin_update_payment' %}" 
-                                                        hx-vals='{"order_id": "{{ order.id }}", "status": "completed"}'
-                                                        hx-swap="none"
-                                                        hx-include="this"
-                                                        class="btn-primary" 
-                                                        style="height: 32px; width: auto; padding: 0 0.8rem; font-size: 0.75rem; background-color: var(--warning-color); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem;">
-                                                    <i class="fa-solid fa-cash-register"></i> Collect Cash (₹{{ order.total_amount|floatformat:2 }})
-                                                </button>
-                                            {% else %}
-                                                <span style="color: var(--success-color); font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.2rem; margin-top: 0.2rem;">
-                                                    <i class="fa-solid fa-circle-check"></i> Paid (₹{{ order.total_amount|floatformat:2 }})
-                                                </span>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
+                        {% for order in active_deliveries %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ order.id
+                                }}</td>
+                            <td style="padding: 0.8rem 1rem;">
+                                <div style="font-weight: 600;">{{ order.customer.name }}</div>
+                                <div style="font-size: 0.75rem; color: #887B75;">{{ order.customer.phone_number }}</div>
+                            </td>
+                            <td style="padding: 0.8rem 1rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                title="{{ order.address.address_text }}">{{ order.address.address_text }}</td>
+                            <td style="padding: 0.8rem 1rem; color: #665C58;">{{ order.address.landmark|default:"-" }}
+                            </td>
+                            <td style="padding: 0.8rem 1rem; font-family: monospace; font-size: 0.8rem; color: #555;">
+                                {% if order.address.latitude and order.address.longitude %}
+                                {{ order.address.latitude }}, {{ order.address.longitude }}
+                                {% else %}
+                                No GPS data
+                                {% endif %}
+                            </td>
+                            <td
+                                style="padding: 0.8rem 1rem; text-transform: uppercase; font-weight: 700; font-size: 0.75rem; color: var(--terracotta);">
+                                {{ order.get_status_display }}
+                            </td>
+                            <td style="padding: 0.8rem 1rem;">
+                                <div
+                                    style="display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start;">
+                                    {% if order.address.latitude and order.address.longitude %}
+                                    <a href="https://www.google.com/maps/search/?api=1&query={{ order.address.latitude }},{{ order.address.longitude }}"
+                                        target="_blank" class="btn-primary"
+                                        style="height: 32px; width: auto; padding: 0 0.8rem; font-size: 0.75rem; background-color: var(--banana-leaf); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem;">
+                                        <i class="fa-solid fa-map-location-dot"></i> View Route Map
+                                    </a>
+                                    {% else %}
+                                    <span style="color: #999; font-size: 0.75rem; font-style: italic;">Cannot map (no
+                                        GPS)</span>
+                                    {% endif %}
+
+                                    {% if order.payment.status != 'completed' %}
+                                    <button hx-post="{% url 'admin_update_payment' %}"
+                                        hx-vals='{"order_id": "{{ order.id }}", "status": "completed"}' hx-swap="none"
+                                        hx-include="this" class="btn-primary"
+                                        style="height: 32px; width: auto; padding: 0 0.8rem; font-size: 0.75rem; background-color: var(--warning-color); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem;">
+                                        <i class="fa-solid fa-cash-register"></i> Collect Cash (₹{{
+                                        order.total_amount|floatformat:2 }})
+                                    </button>
+                                    {% else %}
+                                    <span
+                                        style="color: var(--success-color); font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.2rem; margin-top: 0.2rem;">
+                                        <i class="fa-solid fa-circle-check"></i> Paid (₹{{
+                                        order.total_amount|floatformat:2 }})
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
                         {% else %}
-                            <tr>
-                                <td colspan="7" style="text-align: center; color: #887B75; padding: 2rem;">No pending deliveries to deliver.</td>
-                            </tr>
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #887B75; padding: 2rem;">No pending
+                                deliveries to deliver.</td>
+                        </tr>
                         {% endif %}
                     </tbody>
                 </table>
@@ -553,230 +626,286 @@
 
         <!-- TAB 5: INVENTORY MANAGEMENT -->
         <div x-show="currentTab === 'inventory'" x-data="{ inventorySearch: '' }" style="display: none;">
-            <div id="inventory-tab-content"
-                 hx-get="{% url 'admin_dashboard' %}"
-                 hx-trigger="inventoryUpdated from:body"
-                 hx-select="#inventory-tab-content"
-                 hx-swap="outerHTML">
-            
-            <form hx-post="{% url 'admin_bulk_update_inventory' %}" hx-swap="none" style="margin: 0;">
-                {% csrf_token %}
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.8rem;">
-                    <h3 style="font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.2rem; margin: 0;">Inventory Stock Control</h3>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button type="submit" class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: #2e7d32;">
-                            <i class="fa-solid fa-floppy-disk"></i> Save All Inventory Changes
-                        </button>
-                        <button type="button" 
-                              hx-post="{% url 'admin_clear_inventory' %}" 
-                              hx-confirm="Are you sure you want to reset all product and slab stocks to 0?" 
-                              hx-swap="none"
-                              class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--terracotta);">
-                            <i class="fa-solid fa-trash-can"></i> Clear Stock to 0
-                        </button>
-                        <button type="button" @click="showAddProductModal = true" class="btn-primary" style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--banana-leaf);">
-                            <i class="fa-solid fa-plus"></i> Add New Product
-                        </button>
+            <div id="inventory-tab-content" hx-get="{% url 'admin_dashboard' %}" hx-trigger="inventoryUpdated from:body"
+                hx-select="#inventory-tab-content" hx-swap="outerHTML">
+
+                <form hx-post="{% url 'admin_bulk_update_inventory' %}" hx-swap="none" style="margin: 0;">
+                    {% csrf_token %}
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.8rem;">
+                        <h3
+                            style="font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.2rem; margin: 0;">
+                            Inventory Stock Control</h3>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button type="submit" class="btn-primary"
+                                style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: #2e7d32;">
+                                <i class="fa-solid fa-floppy-disk"></i> Save All Inventory Changes
+                            </button>
+                            <button type="button" hx-post="{% url 'admin_clear_inventory' %}"
+                                hx-confirm="Are you sure you want to reset all product and slab stocks to 0?"
+                                hx-swap="none" class="btn-primary"
+                                style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--terracotta);">
+                                <i class="fa-solid fa-trash-can"></i> Clear Stock to 0
+                            </button>
+                            <button type="button" @click="showAddProductModal = true" class="btn-primary"
+                                style="width: auto; height: 36px; padding: 0 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; background-color: var(--banana-leaf);">
+                                <i class="fa-solid fa-plus"></i> Add New Product
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Inventory Product Search Input -->
-                <div style="margin-bottom: 1rem; position: relative;">
-                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #887B75; font-size: 0.9rem;"></i>
-                    <input type="text" 
-                           x-model="inventorySearch" 
-                           placeholder="🔍 Search products by name (e.g. Batter, Podi, Dosa)..." 
-                           style="width: 100%; padding: 0.65rem 0.8rem 0.65rem 2.2rem; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.85rem; outline: none; background-color: white; color: var(--text-primary);">
-                </div>
+                    <!-- Inventory Product Search Input -->
+                    <div style="margin-bottom: 1rem; position: relative;">
+                        <i class="fa-solid fa-magnifying-glass"
+                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #887B75; font-size: 0.9rem;"></i>
+                        <input type="text" x-model="inventorySearch"
+                            placeholder="Search products by name (e.g. Batter, Podi, Dosa)..."
+                            style="width: 100%; padding: 0.65rem 0.8rem 0.65rem 2.2rem; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.85rem; outline: none; background-color: white; color: var(--text-primary);">
+                    </div>
 
-                <div class="table-container">
-                    <table class="dash-table">
-                        <thead>
-                            <tr>
-                                <th style="padding: 0.8rem 1rem;">Product Details</th>
-                                <th style="padding: 0.8rem 1rem;">Category</th>
-                                <th style="padding: 0.8rem 1rem; min-width: 150px;">Inventory Type</th>
-                                <th style="padding: 0.8rem 1rem;">Live Stock / Slabs Config</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if all_products %}
+                    <div class="table-container">
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 0.8rem 1rem;">Product Details</th>
+                                    <th style="padding: 0.8rem 1rem;">Category</th>
+                                    <th style="padding: 0.8rem 1rem; min-width: 150px;">Inventory Type</th>
+                                    <th style="padding: 0.8rem 1rem;">Live Stock / Slabs Config</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if all_products %}
                                 {% for product in all_products %}
-                                    <tr x-show="!inventorySearch || '{{ product.name_en|lower|escapejs }} {{ product.name_ta|lower|escapejs }} {{ product.category.name_en|lower|escapejs }}'.includes(inventorySearch.toLowerCase().trim())" style="border-bottom: 1px solid var(--border-color);">
-                                        <td style="padding: 0.8rem 1rem;">
-                                            <div style="font-weight: 700; color: var(--dark-brown);">{{ product.name_en }}</div>
-                                            <div style="font-size: 0.75rem; color: #887B75;">{{ product.name_ta }}</div>
-                                        </td>
-                                        <td style="padding: 0.8rem 1rem; font-weight: 500;">
-                                            {{ product.category.name_en }}
-                                        </td>
-                                        <td style="padding: 0.8rem 1rem;">
-                                            <select name="inventory_type_{{ product.id }}" 
-                                                    hx-post="{% url 'admin_update_inventory' %}"
+                                <tr x-show="!inventorySearch || '{{ product.name_en|lower|escapejs }} {{ product.name_ta|lower|escapejs }} {{ product.category.name_en|lower|escapejs }}'.includes(inventorySearch.toLowerCase().trim())"
+                                    style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.8rem 1rem;">
+                                        <div style="font-weight: 700; color: var(--dark-brown);">{{ product.name_en }}
+                                        </div>
+                                        <div style="font-size: 0.75rem; color: #887B75;">{{ product.name_ta }}</div>
+                                    </td>
+                                    <td style="padding: 0.8rem 1rem; font-weight: 500;">
+                                        {{ product.category.name_en }}
+                                    </td>
+                                    <td style="padding: 0.8rem 1rem;">
+                                        <select name="inventory_type_{{ product.id }}"
+                                            hx-post="{% url 'admin_update_inventory' %}"
+                                            hx-vals='{"target_type": "product_config", "product_id": "{{ product.id }}"}'
+                                            hx-swap="none"
+                                            style="height: 30px; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 0.3rem; font-size: 0.75rem; font-weight: 700; outline: none; background-color: var(--bg-card); cursor: pointer; color: var(--text-primary); width: 100%; max-width: 140px;">
+                                            <option value="packaged" {% if product.inventory_type=='packaged'
+                                                %}selected{% endif %}>Packaged (Slabs)</option>
+                                            <option value="bulk" {% if product.inventory_type=='bulk' %}selected{% endif
+                                                %}>Bulk (Weight/Qty)</option>
+                                        </select>
+                                    </td>
+                                    <td style="padding: 0.8rem 1rem;">
+                                        {% if product.inventory_type == 'bulk' %}
+                                        <!-- Bulk Stock controls -->
+                                        <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+                                            <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                                                <div style="font-weight: 600; font-size: 0.85rem; min-width: 80px;">
+                                                    {{ product.bulk_stock }} {{ product.bulk_unit }}
+                                                </div>
+                                                <input type="number" step="0.01" name="bulk_stock_{{ product.id }}"
+                                                    value="{{ product.bulk_stock }}" required
+                                                    style="width: 75px; height: 28px; border: 1px solid var(--border-color); border-radius: 4px; padding: 0 0.4rem; font-size: 0.8rem; background-color: var(--input-bg); color: var(--text-primary); text-align: center;">
+                                                <button type="button" hx-post="{% url 'admin_update_inventory' %}"
+                                                    hx-vals='{"target_type": "bulk", "product_id": "{{ product.id }}"}'
+                                                    hx-include="[name='bulk_stock_{{ product.id }}']" hx-swap="none"
+                                                    class="btn-primary"
+                                                    style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; font-weight: 600;">
+                                                    Update
+                                                </button>
+                                            </div>
+
+                                            <!-- Unit configuration dropdown -->
+                                            <div style="display: flex; align-items: center; margin: 0;">
+                                                <select name="bulk_unit" hx-post="{% url 'admin_update_inventory' %}"
                                                     hx-vals='{"target_type": "product_config", "product_id": "{{ product.id }}"}'
                                                     hx-swap="none"
-                                                    style="height: 30px; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 0.3rem; font-size: 0.75rem; font-weight: 700; outline: none; background-color: var(--bg-card); cursor: pointer; color: var(--text-primary); width: 100%; max-width: 140px;">
-                                                <option value="packaged" {% if product.inventory_type == 'packaged' %}selected{% endif %}>Packaged (Slabs)</option>
-                                                <option value="bulk" {% if product.inventory_type == 'bulk' %}selected{% endif %}>Bulk (Weight/Qty)</option>
-                                            </select>
-                                        </td>
-                                        <td style="padding: 0.8rem 1rem;">
-                                            {% if product.inventory_type == 'bulk' %}
-                                                <!-- Bulk Stock controls -->
-                                                <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
-                                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
-                                                        <div style="font-weight: 600; font-size: 0.85rem; min-width: 80px;">
-                                                            {{ product.bulk_stock }} {{ product.bulk_unit }}
-                                                        </div>
-                                                        <input type="number" step="0.01" name="bulk_stock_{{ product.id }}" value="{{ product.bulk_stock }}" required
-                                                               style="width: 75px; height: 28px; border: 1px solid var(--border-color); border-radius: 4px; padding: 0 0.4rem; font-size: 0.8rem; background-color: var(--input-bg); color: var(--text-primary); text-align: center;">
-                                                        <button type="button" 
-                                                                hx-post="{% url 'admin_update_inventory' %}"
-                                                                hx-vals='{"target_type": "bulk", "product_id": "{{ product.id }}"}'
-                                                                hx-include="[name='bulk_stock_{{ product.id }}']"
-                                                                hx-swap="none"
-                                                                class="btn-primary" style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; font-weight: 600;">
-                                                            Update
-                                                        </button>
-                                                    </div>
+                                                    style="height: 28px; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 0.2rem; font-size: 0.75rem; outline: none; background-color: var(--bg-card); cursor: pointer; color: var(--text-secondary);">
+                                                    <option value="kg" {% if product.bulk_unit=='kg' %}selected{% endif
+                                                        %}>kg</option>
+                                                    <option value="g" {% if product.bulk_unit=='g' %}selected{% endif
+                                                        %}>g</option>
+                                                    <option value="l" {% if product.bulk_unit=='l' %}selected{% endif
+                                                        %}>Litre</option>
+                                                    <option value="ml" {% if product.bulk_unit=='ml' %}selected{% endif
+                                                        %}>ml</option>
+                                                    <option value="piece" {% if product.bulk_unit=='piece' %}selected{%
+                                                        endif %}>Piece</option>
+                                                </select>
+                                            </div>
 
-                                                    <!-- Unit configuration dropdown -->
-                                                    <div style="display: flex; align-items: center; margin: 0;">
-                                                        <select name="bulk_unit" 
-                                                                hx-post="{% url 'admin_update_inventory' %}"
-                                                                hx-vals='{"target_type": "product_config", "product_id": "{{ product.id }}"}'
-                                                                hx-swap="none"
-                                                                style="height: 28px; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 0.2rem; font-size: 0.75rem; outline: none; background-color: var(--bg-card); cursor: pointer; color: var(--text-secondary);">
-                                                            <option value="kg" {% if product.bulk_unit == 'kg' %}selected{% endif %}>kg</option>
-                                                            <option value="g" {% if product.bulk_unit == 'g' %}selected{% endif %}>g</option>
-                                                            <option value="l" {% if product.bulk_unit == 'l' %}selected{% endif %}>Litre</option>
-                                                            <option value="ml" {% if product.bulk_unit == 'ml' %}selected{% endif %}>ml</option>
-                                                            <option value="piece" {% if product.bulk_unit == 'piece' %}selected{% endif %}>Piece</option>
-                                                        </select>
-                                                    </div>
+                                            <!-- Inline Add Slab button -->
+                                            <button type="button"
+                                                @click="activeProductIdForSlab = '{{ product.id }}'; activeProductNameForSlab = '{{ product.name_en|escapejs }}'; showAddSlabModal = true;"
+                                                class="btn-primary"
+                                                style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; background-color: var(--dark-brown);">
+                                                <i class="fa-solid fa-plus"></i> Add Slab
+                                            </button>
+                                        </div>
+                                        {% else %}
+                                        <!-- Packaged Slabs controls -->
+                                        <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                                            {% for slab in product.price_slabs.all %}
+                                            <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                                                <div
+                                                    style="font-size: 0.75rem; min-width: 140px; color: var(--text-secondary);">
+                                                    {{ slab.quantity_value }} {{ slab.get_quantity_unit_display }} (₹{{
+                                                    slab.price }})
+                                                </div>
+                                                <div style="font-weight: 600; font-size: 0.8rem; min-width: 80px;">
+                                                    {{ slab.stock }} packs
+                                                </div>
+                                                <input type="number" name="slab_stock_{{ slab.id }}"
+                                                    value="{{ slab.stock }}" required
+                                                    style="width: 65px; height: 26px; border: 1px solid var(--border-color); border-radius: 4px; padding: 0 0.4rem; font-size: 0.75rem; background-color: var(--input-bg); color: var(--text-primary); text-align: center;">
+                                                <button type="button" hx-post="{% url 'admin_update_inventory' %}"
+                                                    hx-vals='{"target_type": "packaged", "slab_id": "{{ slab.id }}"}'
+                                                    hx-include="[name='slab_stock_{{ slab.id }}']" hx-swap="none"
+                                                    class="btn-primary"
+                                                    style="height: 26px; padding: 0 0.6rem; font-size: 0.7rem; width: auto; font-weight: 600; background-color: var(--dark-brown);">
+                                                    Update
+                                                </button>
+                                            </div>
+                                            {% endfor %}
 
-                                                    <!-- Inline Add Slab button -->
-                                                    <button type="button" @click="activeProductIdForSlab = '{{ product.id }}'; activeProductNameForSlab = '{{ product.name_en|escapejs }}'; showAddSlabModal = true;" class="btn-primary" style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; background-color: var(--dark-brown);">
-                                                        <i class="fa-solid fa-plus"></i> Add Slab
-                                                    </button>
-                                                </div>
-                                            {% else %}
-                                                <!-- Packaged Slabs controls -->
-                                                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-                                                    {% for slab in product.price_slabs.all %}
-                                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
-                                                            <div style="font-size: 0.75rem; min-width: 140px; color: var(--text-secondary);">
-                                                                {{ slab.quantity_value }} {{ slab.get_quantity_unit_display }} (₹{{ slab.price }})
-                                                            </div>
-                                                            <div style="font-weight: 600; font-size: 0.8rem; min-width: 80px;">
-                                                                {{ slab.stock }} packs
-                                                            </div>
-                                                            <input type="number" name="slab_stock_{{ slab.id }}" value="{{ slab.stock }}" required
-                                                                   style="width: 65px; height: 26px; border: 1px solid var(--border-color); border-radius: 4px; padding: 0 0.4rem; font-size: 0.75rem; background-color: var(--input-bg); color: var(--text-primary); text-align: center;">
-                                                            <button type="button" 
-                                                                    hx-post="{% url 'admin_update_inventory' %}"
-                                                                    hx-vals='{"target_type": "packaged", "slab_id": "{{ slab.id }}"}'
-                                                                    hx-include="[name='slab_stock_{{ slab.id }}']"
-                                                                    hx-swap="none"
-                                                                    class="btn-primary" style="height: 26px; padding: 0 0.6rem; font-size: 0.7rem; width: auto; font-weight: 600; background-color: var(--dark-brown);">
-                                                                Update
-                                                            </button>
-                                                        </div>
-                                                    {% endfor %}
-                                                    
-                                                    <div style="margin-top: 0.2rem;">
-                                                        <button type="button" @click="activeProductIdForSlab = '{{ product.id }}'; activeProductNameForSlab = '{{ product.name_en|escapejs }}'; showAddSlabModal = true;" class="btn-primary" style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; background-color: var(--dark-brown);">
-                                                            <i class="fa-solid fa-plus"></i> Add Price Slab
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="4" style="text-align: center; color: #887B75; padding: 2rem;">No products configured in the system.</td>
+                                            <div style="margin-top: 0.2rem;">
+                                                <button type="button"
+                                                    @click="activeProductIdForSlab = '{{ product.id }}'; activeProductNameForSlab = '{{ product.name_en|escapejs }}'; showAddSlabModal = true;"
+                                                    class="btn-primary"
+                                                    style="height: 28px; padding: 0 0.6rem; font-size: 0.75rem; width: auto; background-color: var(--dark-brown);">
+                                                    <i class="fa-solid fa-plus"></i> Add Price Slab
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </td>
                                 </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </form>
-        </div>
-
-        <!-- Add Product Popup Modal -->
-        <div x-show="showAddProductModal" 
-             style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; box-sizing: border-box;"
-             @click.self="showAddProductModal = false"
-             x-cloak>
-            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 500px; box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
-                <!-- Header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; border-bottom: 1px solid var(--border-color); background-color: var(--rice-white);">
-                    <h3 style="margin: 0; font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.1rem;">Add New Product</h3>
-                    <button @click="showAddProductModal = false" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);"><i class="fa-solid fa-times"></i></button>
-                </div>
-                
-                <!-- Body -->
-                <form hx-post="{% url 'admin_create_product' %}" 
-                      hx-encoding="multipart/form-data"
-                      hx-swap="none"
-                      @submit="showAddProductModal = false"
-                      style="padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto;">
-                    {% csrf_token %}
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
-                        <div class="form-group-dash">
-                            <label>Name (English) *</label>
-                            <input type="text" name="name_en" required placeholder="e.g. Dosa Batter">
-                        </div>
-                        <div class="form-group-dash">
-                            <label>Name (Tamil) *</label>
-                            <input type="text" name="name_ta" required placeholder="e.g. தோசை மாவு">
-                        </div>
+                                {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: #887B75; padding: 2rem;">No
+                                        products configured in the system.</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
                     </div>
-                    
-                    <div class="form-group-dash">
-                        <label>Category *</label>
-                        <select name="category_id" required style="width: 100%;">
-                            <option value="">Select Category</option>
-                            {% for cat in categories %}
-                                <option value="{{ cat.id }}">{{ cat.name_en }} ({{ cat.name_ta }})</option>
-                            {% endfor %}
-                        </select>
+                </form>
+            </div>
+
+            <!-- Add Product Popup Modal -->
+            <div x-show="showAddProductModal"
+                style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; box-sizing: border-box;"
+                @click.self="showAddProductModal = false" x-cloak>
+                <div
+                    style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 500px; box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
+                    <!-- Header -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; border-bottom: 1px solid var(--border-color); background-color: var(--rice-white);">
+                        <h3
+                            style="margin: 0; font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.1rem;">
+                            Add New Product</h3>
+                        <button @click="showAddProductModal = false"
+                            style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);"><i
+                                class="fa-solid fa-times"></i></button>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
-                        <div class="form-group-dash">
-                            <label>Description (English)</label>
-                            <input type="text" name="description_en" placeholder="Optional English description">
-                        </div>
-                        <div class="form-group-dash">
-                            <label>Description (Tamil)</label>
-                            <input type="text" name="description_ta" placeholder="Optional Tamil description">
-                        </div>
-                    </div>
+                    <!-- Body -->
+                    <form hx-post="{% url 'admin_create_product' %}" hx-encoding="multipart/form-data" hx-swap="none"
+                        @submit="showAddProductModal = false"
+                        style="padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto;">
+                        {% csrf_token %}
 
-                    <div class="form-group-dash">
-                        <label>Product Image</label>
-                        <input type="file" name="image" accept="image/*" style="padding: 0.2rem 0; border: none; height: auto;">
-                    </div>
-
-                    <div style="border-top: 1px dashed var(--border-color); padding-top: 0.8rem;">
-                        <h4 style="margin: 0 0 0.6rem 0; font-size: 0.85rem; color: var(--dark-brown);">Inventory Setup</h4>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
                             <div class="form-group-dash">
-                                <label>Stock Type</label>
-                                <select name="inventory_type">
-                                    <option value="packaged">Packaged (Slab Stocked)</option>
-                                    <option value="bulk">Bulk (Weight/Volume Stocked)</option>
-                                </select>
+                                <label>Name (English) *</label>
+                                <input type="text" name="name_en" required placeholder="e.g. Dosa Batter">
                             </div>
                             <div class="form-group-dash">
-                                <label>Initial Bulk Level / Unit</label>
-                                <div style="display: flex; gap: 0.3rem;">
-                                    <input type="number" step="0.01" name="bulk_stock" value="100.00" style="width: 60%;">
-                                    <select name="bulk_unit" style="width: 40%;">
+                                <label>Name (Tamil) *</label>
+                                <input type="text" name="name_ta" required placeholder="e.g. தோசை மாவு">
+                            </div>
+                        </div>
+
+                        <div class="form-group-dash">
+                            <label>Category *</label>
+                            <select name="category_id" required style="width: 100%;">
+                                <option value="">Select Category</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.name_en }} ({{ cat.name_ta }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+                            <div class="form-group-dash">
+                                <label>Description (English)</label>
+                                <input type="text" name="description_en" placeholder="Optional English description">
+                            </div>
+                            <div class="form-group-dash">
+                                <label>Description (Tamil)</label>
+                                <input type="text" name="description_ta" placeholder="Optional Tamil description">
+                            </div>
+                        </div>
+
+                        <div class="form-group-dash">
+                            <label>Product Image</label>
+                            <input type="file" name="image" accept="image/*"
+                                style="padding: 0.2rem 0; border: none; height: auto;">
+                        </div>
+
+                        <div style="border-top: 1px dashed var(--border-color); padding-top: 0.8rem;">
+                            <h4 style="margin: 0 0 0.6rem 0; font-size: 0.85rem; color: var(--dark-brown);">Inventory
+                                Setup</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+                                <div class="form-group-dash">
+                                    <label>Stock Type</label>
+                                    <select name="inventory_type">
+                                        <option value="packaged">Packaged (Slab Stocked)</option>
+                                        <option value="bulk">Bulk (Weight/Volume Stocked)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group-dash">
+                                    <label>Initial Bulk Level / Unit</label>
+                                    <div style="display: flex; gap: 0.3rem;">
+                                        <input type="number" step="0.01" name="bulk_stock" value="100.00"
+                                            style="width: 60%;">
+                                        <select name="bulk_unit" style="width: 40%;">
+                                            <option value="kg">kg</option>
+                                            <option value="g">g</option>
+                                            <option value="l">l</option>
+                                            <option value="ml">ml</option>
+                                            <option value="piece">piece</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            style="border-top: 1px dashed var(--border-color); padding-top: 0.8rem; background-color: var(--rice-white); padding: 0.8rem; border-radius: 8px;">
+                            <h4
+                                style="margin: 0 0 0.6rem 0; font-size: 0.85rem; color: var(--dark-brown); font-weight: 700;">
+                                Initial Price Slab Configuration</h4>
+                            <div
+                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.6rem;">
+                                <div class="form-group-dash">
+                                    <label>Slab Price (₹) *</label>
+                                    <input type="number" step="0.01" name="slab_price" required placeholder="e.g. 50">
+                                </div>
+                                <div class="form-group-dash">
+                                    <label>Quantity Value *</label>
+                                    <input type="number" step="0.01" name="slab_qty_value" required
+                                        placeholder="e.g. 1.0">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+                                <div class="form-group-dash">
+                                    <label>Quantity Unit *</label>
+                                    <select name="slab_qty_unit" required>
                                         <option value="kg">kg</option>
                                         <option value="g">g</option>
                                         <option value="l">l</option>
@@ -784,26 +913,67 @@
                                         <option value="piece">piece</option>
                                     </select>
                                 </div>
+                                <div class="form-group-dash">
+                                    <label>Initial Slab Stock (Packs) *</label>
+                                    <input type="number" name="slab_stock" value="100" required>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Footer Actions -->
+                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem;">
+                            <button type="button" @click="showAddProductModal = false" class="category-tab"
+                                style="height: 38px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border-color);">Cancel</button>
+                            <button type="submit" class="btn-primary"
+                                style="width: auto; height: 38px; padding: 0 1.2rem; border-radius: 8px; font-weight: 700;">Save
+                                Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Price Slab Popup Modal -->
+            <div x-show="showAddSlabModal"
+                style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; box-sizing: border-box;"
+                @click.self="showAddSlabModal = false" x-cloak>
+                <div
+                    style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 420px; box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;">
+                    <!-- Header -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; border-bottom: 1px solid var(--border-color); background-color: var(--rice-white);">
+                        <div>
+                            <h3
+                                style="margin: 0; font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.1rem;">
+                                Add Price Slab</h3>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);"
+                                x-text="'To Product: ' + activeProductNameForSlab"></span>
+                        </div>
+                        <button @click="showAddSlabModal = false"
+                            style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);"><i
+                                class="fa-solid fa-times"></i></button>
                     </div>
 
-                    <div style="border-top: 1px dashed var(--border-color); padding-top: 0.8rem; background-color: var(--rice-white); padding: 0.8rem; border-radius: 8px;">
-                        <h4 style="margin: 0 0 0.6rem 0; font-size: 0.85rem; color: var(--dark-brown); font-weight: 700;">Initial Price Slab Configuration</h4>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.6rem;">
+                    <!-- Body -->
+                    <form hx-post="{% url 'admin_add_slab' %}" hx-swap="none" @submit="showAddSlabModal = false"
+                        style="padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem;">
+                        {% csrf_token %}
+                        <input type="hidden" name="product_id" :value="activeProductIdForSlab">
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
                             <div class="form-group-dash">
                                 <label>Slab Price (₹) *</label>
-                                <input type="number" step="0.01" name="slab_price" required placeholder="e.g. 50">
+                                <input type="number" step="0.01" name="price" required placeholder="e.g. 70">
                             </div>
                             <div class="form-group-dash">
                                 <label>Quantity Value *</label>
-                                <input type="number" step="0.01" name="slab_qty_value" required placeholder="e.g. 1.0">
+                                <input type="number" step="0.01" name="quantity_value" required placeholder="e.g. 500">
                             </div>
                         </div>
+
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
                             <div class="form-group-dash">
                                 <label>Quantity Unit *</label>
-                                <select name="slab_qty_unit" required>
+                                <select name="quantity_unit" required>
                                     <option value="kg">kg</option>
                                     <option value="g">g</option>
                                     <option value="l">l</option>
@@ -812,147 +982,98 @@
                                 </select>
                             </div>
                             <div class="form-group-dash">
-                                <label>Initial Slab Stock (Packs) *</label>
-                                <input type="number" name="slab_stock" value="100" required>
+                                <label>Initial Stock (Packs) *</label>
+                                <input type="number" name="stock" value="100" required>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Footer Actions -->
-                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem;">
-                        <button type="button" @click="showAddProductModal = false" class="category-tab" style="height: 38px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border-color);">Cancel</button>
-                        <button type="submit" class="btn-primary" style="width: auto; height: 38px; padding: 0 1.2rem; border-radius: 8px; font-weight: 700;">Save Product</button>
-                    </div>
-                </form>
-            </div>
-        </div>
 
-        <!-- Add Price Slab Popup Modal -->
-        <div x-show="showAddSlabModal" 
-             style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; box-sizing: border-box;"
-             @click.self="showAddSlabModal = false"
-             x-cloak>
-            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 420px; box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column;">
-                <!-- Header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; border-bottom: 1px solid var(--border-color); background-color: var(--rice-white);">
-                    <div>
-                        <h3 style="margin: 0; font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.1rem;">Add Price Slab</h3>
-                        <span style="font-size: 0.75rem; color: var(--text-secondary);" x-text="'To Product: ' + activeProductNameForSlab"></span>
-                    </div>
-                    <button @click="showAddSlabModal = false" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary);"><i class="fa-solid fa-times"></i></button>
+                        <!-- Footer Actions -->
+                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem;">
+                            <button type="button" @click="showAddSlabModal = false" class="category-tab"
+                                style="height: 38px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border-color);">Cancel</button>
+                            <button type="submit" class="btn-primary"
+                                style="width: auto; height: 38px; padding: 0 1.2rem; border-radius: 8px; font-weight: 700;">Save
+                                Slab</button>
+                        </div>
+                    </form>
                 </div>
-                
-                <!-- Body -->
-                <form hx-post="{% url 'admin_add_slab' %}" 
-                      hx-swap="none"
-                      @submit="showAddSlabModal = false"
-                      style="padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem;">
-                    {% csrf_token %}
-                    <input type="hidden" name="product_id" :value="activeProductIdForSlab">
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
-                        <div class="form-group-dash">
-                            <label>Slab Price (₹) *</label>
-                            <input type="number" step="0.01" name="price" required placeholder="e.g. 70">
-                        </div>
-                        <div class="form-group-dash">
-                            <label>Quantity Value *</label>
-                            <input type="number" step="0.01" name="quantity_value" required placeholder="e.g. 500">
-                        </div>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
-                        <div class="form-group-dash">
-                            <label>Quantity Unit *</label>
-                            <select name="quantity_unit" required>
-                                <option value="kg">kg</option>
-                                <option value="g">g</option>
-                                <option value="l">l</option>
-                                <option value="ml">ml</option>
-                                <option value="piece">piece</option>
-                            </select>
-                        </div>
-                        <div class="form-group-dash">
-                            <label>Initial Stock (Packs) *</label>
-                            <input type="number" name="stock" value="100" required>
-                        </div>
-                    </div>
-                    
-                    <!-- Footer Actions -->
-                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem;">
-                        <button type="button" @click="showAddSlabModal = false" class="category-tab" style="height: 38px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border-color);">Cancel</button>
-                        <button type="submit" class="btn-primary" style="width: auto; height: 38px; padding: 0 1.2rem; border-radius: 8px; font-weight: 700;">Save Slab</button>
-                    </div>
-                </form>
             </div>
-        </div>
 
-        <!-- Background Order Poller for Realtime Live Updates & Audio Notifications -->
-        <div id="order-notification-poller"
-             hx-get="{% url 'admin_order_notification' %}"
-             hx-trigger="every 8s"
-             hx-include="#max-order-input"
-             hx-swap="outerHTML">
-            <input type="hidden" id="max-order-input" name="max_order_id" value="{{ max_order_id }}">
-        </div>
+            <!-- Background Order Poller for Realtime Live Updates & Audio Notifications -->
+            <div id="order-notification-poller" hx-get="{% url 'admin_order_notification' %}" hx-trigger="every 8s"
+                hx-include="#max-order-input" hx-swap="outerHTML">
+                <input type="hidden" id="max-order-input" name="max_order_id" value="{{ max_order_id }}">
+            </div>
 
-        <!-- Items Detail Modal -->
-        <div x-show="activeItemsOrder !== null" 
-             style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; box-sizing: border-box;"
-             @click.self="activeItemsOrder = null"
-             x-cloak>
-            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column; max-height: 85vh;">
-                <!-- Modal Header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; border-bottom: 1px solid var(--border-color); background-color: var(--rice-white);">
-                    <div style="display: flex; flex-direction: column;">
-                        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--dark-brown);">
-                            Order Items Detail
-                        </h3>
-                        <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.1rem;" x-text="'Order #' + (activeItemsOrder ? activeItemsOrder.id : '')"></span>
+            <!-- Items Detail Modal -->
+            <div x-show="activeItemsOrder !== null"
+                style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; box-sizing: border-box;"
+                @click.self="activeItemsOrder = null" x-cloak>
+                <div
+                    style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); overflow: hidden; display: flex; flex-direction: column; max-height: 85vh;">
+                    <!-- Modal Header -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; border-bottom: 1px solid var(--border-color); background-color: var(--rice-white);">
+                        <div style="display: flex; flex-direction: column;">
+                            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--dark-brown);">
+                                Order Items Detail
+                            </h3>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.1rem;"
+                                x-text="'Order #' + (activeItemsOrder ? activeItemsOrder.id : '')"></span>
+                        </div>
+                        <button @click="activeItemsOrder = null"
+                            style="background: none; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--text-secondary); padding: 0.2rem; outline: none;">
+                            &times;
+                        </button>
                     </div>
-                    <button @click="activeItemsOrder = null" style="background: none; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--text-secondary); padding: 0.2rem; outline: none;">
-                        &times;
-                    </button>
-                </div>
-                <!-- Modal Body -->
-                <div style="padding: 1.2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.8rem;">
-                    <template x-if="activeItemsOrder !== null">
-                        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
-                            <template x-for="(item, index) in activeItemsOrder.items" :key="index">
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-card); font-size: 0.85rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.8rem;">
-                                        <span style="background-color: var(--warning-color); color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-weight: 700; font-size: 0.75rem;" x-text="item.quantity + 'x'"></span>
-                                        <div style="display: flex; flex-direction: column;">
-                                            <span style="font-weight: 600; color: var(--text-primary);" x-text="item.name"></span>
-                                            <span style="font-size: 0.7rem; color: var(--text-secondary);" x-text="item.weight"></span>
+                    <!-- Modal Body -->
+                    <div style="padding: 1.2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.8rem;">
+                        <template x-if="activeItemsOrder !== null">
+                            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                                <template x-for="(item, index) in activeItemsOrder.items" :key="index">
+                                    <div
+                                        style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.8rem; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-card); font-size: 0.85rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                            <span
+                                                style="background-color: var(--warning-color); color: white; padding: 0.2rem 0.5rem; border-radius: 6px; font-weight: 700; font-size: 0.75rem;"
+                                                x-text="item.quantity + 'x'"></span>
+                                            <div style="display: flex; flex-direction: column;">
+                                                <span style="font-weight: 600; color: var(--text-primary);"
+                                                    x-text="item.name"></span>
+                                                <span style="font-size: 0.7rem; color: var(--text-secondary);"
+                                                    x-text="item.weight"></span>
+                                            </div>
                                         </div>
+                                        <div style="font-weight: 700; color: var(--dark-brown);"
+                                            x-text="'₹' + item.subtotal"></div>
                                     </div>
-                                    <div style="font-weight: 700; color: var(--dark-brown);" x-text="'₹' + item.subtotal"></div>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-                </div>
-                <!-- Modal Footer -->
-                <div style="padding: 1.2rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; background-color: var(--rice-white);">
-                    <button @click="activeItemsOrder = null" class="btn-primary" style="background-color: var(--dark-brown); height: 36px; padding: 0 1.2rem; font-size: 0.8rem; cursor: pointer; border: none; border-radius: 8px; color: white;">
-                        Close Window
-                    </button>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                    <!-- Modal Footer -->
+                    <div
+                        style="padding: 1.2rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; background-color: var(--rice-white);">
+                        <button @click="activeItemsOrder = null" class="btn-primary"
+                            style="background-color: var(--dark-brown); height: 36px; padding: 0 1.2rem; font-size: 0.8rem; cursor: pointer; border: none; border-radius: 8px; color: white;">
+                            Close Window
+                        </button>
+                    </div>
                 </div>
             </div>
+
         </div>
 
-    </div>
-
-    <!-- Chart.js Initializer -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var salesTrendLabels = {{ sales_trend_labels_json|safe }};
-            var salesTrendValues = {{ sales_trend_values_json|safe }};
-            var hourlyLabels = {{ hourly_labels_json|safe }};
-            var hourlyValues = {{ hourly_values_json|safe }};
-            var topProductsLabels = {{ top_products_labels_json|safe }};
-            var topProductsValues = {{ top_products_values_json|safe }};
+        <!-- Chart.js Initializer -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var salesTrendLabels = {{ sales_trend_labels_json| safe
+            }};
+            var salesTrendValues = {{ sales_trend_values_json| safe }};
+            var hourlyLabels = {{ hourly_labels_json| safe }};
+            var hourlyValues = {{ hourly_values_json| safe }};
+            var topProductsLabels = {{ top_products_labels_json| safe }};
+            var topProductsValues = {{ top_products_values_json| safe }};
 
             // 1. Daily Revenue Chart
             var salesCtx = document.getElementById('salesTrendsChart').getContext('2d');
@@ -1019,7 +1140,7 @@
                         x: {
                             grid: { display: false },
                             ticks: {
-                                callback: function(value, index, values) {
+                                callback: function (value, index, values) {
                                     return index % 3 === 0 ? this.getLabelForValue(value) : '';
                                 }
                             }
@@ -1063,6 +1184,7 @@
                 }
             });
         });
-    </script>
+        </script>
 </body>
+
 </html>
