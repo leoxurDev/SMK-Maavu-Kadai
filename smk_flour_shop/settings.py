@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import environ
+import dj_database_url
 
 # Initialize environ
 env = environ.Env(
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -78,9 +80,20 @@ WSGI_APPLICATION = 'smk_flour_shop.wsgi.application'
 ASGI_APPLICATION = 'smk_flour_shop.asgi.application'
 
 # Database Setup
-# Fallback to sqlite if DB_ENGINE is not set to mysql or if DB_NAME is missing
+# Priority: DATABASE_URL (Render) > MySQL (.env) > SQLite (fallback)
+DATABASE_URL = env.str('DATABASE_URL', default='')
 DB_ENGINE = env.str('DB_ENGINE', default='sqlite')
-if DB_ENGINE == 'mysql' and env.str('DB_NAME', default=''):
+
+if DATABASE_URL:
+    # Render.com provides DATABASE_URL automatically
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+elif DB_ENGINE == 'mysql' and env.str('DB_NAME', default=''):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -148,6 +161,11 @@ CELERY_BROKER_URL = env.str('CELERY_BROKER_URL', default='memory://')
 CELERY_RESULT_BACKEND = env.str('CELERY_RESULT_BACKEND', default='')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+CELERY_TASK_ALWAYS_EAGER = env.bool('CELERY_TASK_ALWAYS_EAGER', default=False)
+CELERY_TASK_EAGER_PROPAGATES = env.bool('CELERY_TASK_EAGER_PROPAGATES', default=False)
+
+# WhiteNoise static file compression and caching
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Razorpay Keys
 RAZORPAY_KEY_ID = env.str('RAZORPAY_KEY_ID', default='')
