@@ -12,3 +12,6 @@ python manage.py collectstatic --noinput
 
 echo "Running database migrations..."
 python manage.py migrate
+
+echo "Creating superuser (if not exists)..."
+python manage.py createsuperuser --noinput || echo "Superuser already exists, skipping."
