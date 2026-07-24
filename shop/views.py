@@ -1800,7 +1800,7 @@ def admin_update_smtp_config(request):
     except Exception as e:
         msg = f'<div style="padding: 0.8rem; background-color: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Error saving configuration: {str(e)}</div>'
         if getattr(request, 'htmx', False) or request.headers.get('HX-Request'):
-            return HttpResponse(msg, status=400)
+            return HttpResponse(msg, status=200)
         return redirect('admin_dashboard')
     
     if getattr(request, 'htmx', False) or request.headers.get('HX-Request'):
@@ -1838,7 +1838,7 @@ def admin_send_test_email_report(request):
         recipient_email = post_recip or config.recipient_email or ''
 
         if not smtp_user or not recipient_email:
-            return HttpResponse('<div style="padding: 0.8rem; background-color: #feecdc; border: 1px solid #fbd5a5; color: #b43403; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Please enter your SMTP Username and Recipient Email address first!</div>', status=400)
+            return HttpResponse('<div style="padding: 0.8rem; background-color: #feecdc; border: 1px solid #fbd5a5; color: #b43403; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Please enter your SMTP Username and Recipient Email address first!</div>', status=200)
         
         config.smtp_host = smtp_host
         config.smtp_port = smtp_port
@@ -1964,6 +1964,6 @@ def admin_send_test_email_report(request):
         email.attach('smk_flour_shop_report.pdf', pdf_data, 'application/pdf')
         email.send(fail_silently=False)
         
-        return HttpResponse(f'<div style="padding: 0.8rem; background-color: #def7ec; border: 1px solid #84e1bc; color: #03543f; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-paper-plane"></i> Email Report Sent Successfully to {", ".join(recipients)}!</div>')
+        return HttpResponse(f'<div style="padding: 0.8rem; background-color: #def7ec; border: 1px solid #84e1bc; color: #03543f; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-paper-plane"></i> Email Report Sent Successfully to {", ".join(recipients)}!</div>', status=200)
     except Exception as e:
-        return HttpResponse(f'<div style="padding: 0.8rem; background-color: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Error sending email: {str(e)}</div>', status=500)
+        return HttpResponse(f'<div style="padding: 0.8rem; background-color: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Error sending email: {str(e)}</div>', status=200)
