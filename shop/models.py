@@ -282,3 +282,21 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment for Order #{self.order.id} - {self.get_status_display()}"
+
+class SmtpConfig(models.Model):
+    smtp_host = models.CharField(max_length=255, default='smtp.gmail.com')
+    smtp_port = models.IntegerField(default=587)
+    smtp_user = models.CharField(max_length=255, blank=True, default='')
+    smtp_password = models.CharField(max_length=255, blank=True, default='')
+    use_tls = models.BooleanField(default=True)
+    recipient_email = models.CharField(max_length=255, blank=True, default='')
+    auto_daily_email = models.BooleanField(default=False)
+    include_orders = models.BooleanField(default=True)
+    include_payments = models.BooleanField(default=True)
+    include_inventory = models.BooleanField(default=True)
+    include_analytics = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"SMTP Configuration ({self.smtp_user or 'Default'})"
+

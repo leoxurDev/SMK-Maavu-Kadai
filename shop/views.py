@@ -719,6 +719,12 @@ def admin_dashboard(request):
     all_products = Product.objects.all().prefetch_related('price_slabs').order_by('category__display_order', 'name_en')
     categories = Category.objects.all().order_by('display_order', 'name_en')
 
+    try:
+        from shop.models import SmtpConfig
+        smtp_config = SmtpConfig.objects.first()
+    except Exception:
+        smtp_config = None
+
     context = {
         'today_sales': today_sales,
         'today_orders_count': today_orders_count,
@@ -737,6 +743,7 @@ def admin_dashboard(request):
         'delivery_staff': delivery_staff,
         'all_products': all_products,
         'categories': categories,
+        'smtp_config': smtp_config,
     }
     
     return render(request, 'shop/admin_dashboard.html', context)
@@ -1571,3 +1578,255 @@ def admin_clear_inventory(request):
         return response
         
     return redirect('admin_dashboard')
+
+@staff_member_required
+def admin_generate_report(request):
+    from shop.models import Order, Payment, Product, Category, OrderItem, SmtpConfig
+    from django.db.models import Sum, Count
+    from django.utils import timezone
+    from datetime import timedelta
+    from io import BytesIO
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+
+    date_range = request.POST.get('date_range', request.GET.get('date_range', 'all'))
+    report_format = request.POST.get('format', request.GET.get('format', 'pdf'))
+    
+    include_orders = request.POST.get('include_orders') == 'true' or request.GET.get('include_orders') == 'true' or 'include_orders' in request.POST
+    include_payments = request.POST.get('include_payments') == 'true' or request.GET.get('include_payments') == 'true' or 'include_payments' in request.POST
+    include_inventory = request.POST.get('include_inventory') == 'true' or request.GET.get('include_inventory') == 'true' or 'include_inventory' in request.POST
+    include_analytics = request.POST.get('include_analytics') == 'true' or request.GET.get('include_analytics') == 'true' or 'include_analytics' in request.POST
+
+    if not (include_orders or include_payments or include_inventory or include_analytics):
+        include_orders = include_payments = include_inventory = include_analytics = True
+
+    now = timezone.localtime(timezone.now())
+    if date_range == 'today':
+        start_date = now.date()
+        orders_qs = Order.objects.filter(created_at__date=start_date)
+        payments_qs = Payment.objects.filter(created_at__date=start_date)
+    elif date_range == 'week':
+        start_date = (now - timedelta(days=7)).date()
+        orders_qs = Order.objects.filter(created_at__date__gte=start_date)
+        payments_qs = Payment.objects.filter(created_at__date__gte=start_date)
+    elif date_range == 'month':
+        start_date = (now - timedelta(days=30)).date()
+        orders_qs = Order.objects.filter(created_at__date__gte=start_date)
+        payments_qs = Payment.objects.filter(created_at__date__gte=start_date)
+    else:
+        orders_qs = Order.objects.all()
+        payments_qs = Payment.objects.all()
+
+    orders_list = list(orders_qs.select_related('customer').order_by('-created_at'))
+    payments_list = list(payments_qs.select_related('order', 'order__customer').order_by('-created_at'))
+    products_list = list(Product.objects.all().prefetch_related('price_slabs').select_related('category').order_by('category__display_order', 'name_en'))
+    
+    total_rev = payments_qs.filter(status='completed').aggregate(total=Sum('amount'))['total'] or 0.0
+    top_prods = list(OrderItem.objects.values('product__name_en', 'product__name_ta').annotate(total_qty=Sum('quantity')).order_by('-total_qty')[:5])
+
+    if report_format == 'pdf':
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        styles = getSampleStyleSheet()
+        
+        title_style = ParagraphStyle('ReportTitle', parent=styles['Heading1'], fontSize=16, leading=20, textColor=colors.HexColor('#1d1d1f'), alignment=1)
+        sub_style = ParagraphStyle('ReportSub', parent=styles['Normal'], fontSize=9, leading=12, textColor=colors.HexColor('#86868b'), alignment=1)
+        h2_style = ParagraphStyle('SectionHeader', parent=styles['Heading2'], fontSize=11, leading=15, textColor=colors.HexColor('#0071e3'), spaceBefore=10, spaceAfter=4)
+        cell_style = ParagraphStyle('Cell', parent=styles['Normal'], fontSize=8, leading=10)
+        cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=8, leading=10, fontName='Helvetica-Bold')
+
+        elements = []
+        elements.append(Paragraph("<b>SMK FLOUR SHOP — OPERATIONS & BUSINESS REPORT</b>", title_style))
+        elements.append(Paragraph(f"Generated on: {now.strftime('%d %b %Y, %I:%M %p')} | Range: {date_range.upper()}", sub_style))
+        elements.append(Spacer(1, 10))
+
+        if include_analytics:
+            elements.append(Paragraph("1. Executive Analytics Summary", h2_style))
+            summary_data = [
+                [Paragraph("Total Revenue", cell_bold), Paragraph(f"₹{total_rev:,.2f}", cell_bold),
+                 Paragraph("Total Orders Placed", cell_bold), Paragraph(str(len(orders_list)), cell_bold)]
+            ]
+            t_sum = Table(summary_data, colWidths=[1.5*inch, 2*inch, 1.5*inch, 2*inch])
+            t_sum.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#f5f5f7')),
+                ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#e8e8ed')),
+                ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#e8e8ed')),
+                ('PADDING', (0,0), (-1,-1), 5),
+            ]))
+            elements.append(t_sum)
+            elements.append(Spacer(1, 8))
+
+            if top_prods:
+                elements.append(Paragraph("<b>Top Selling Products</b>", ParagraphStyle('SubSub', parent=styles['Normal'], fontSize=8, leading=10, fontName='Helvetica-Bold')))
+                top_data = [[Paragraph("Product Name", cell_bold), Paragraph("Units Sold", cell_bold)]]
+                for tp in top_prods:
+                    top_data.append([Paragraph(tp['product__name_en'], cell_style), Paragraph(str(tp['total_qty']), cell_style)])
+                t_top = Table(top_data, colWidths=[4.5*inch, 2.5*inch])
+                t_top.setStyle(TableStyle([
+                    ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#e8e8ed')),
+                    ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#e8e8ed')),
+                    ('PADDING', (0,0), (-1,-1), 4),
+                ]))
+                elements.append(t_top)
+                elements.append(Spacer(1, 10))
+
+        if include_orders:
+            elements.append(Paragraph("2. Live Orders & Fulfillment Register", h2_style))
+            ord_data = [[Paragraph("Order ID", cell_bold), Paragraph("Customer", cell_bold), Paragraph("Phone", cell_bold), Paragraph("Type", cell_bold), Paragraph("Status", cell_bold), Paragraph("Total", cell_bold)]]
+            for o in orders_list[:30]:
+                c_name = o.customer.name if o.customer else "Guest"
+                c_phone = o.customer.phone_number if o.customer else "-"
+                ord_data.append([
+                    Paragraph(f"#{o.id}", cell_style),
+                    Paragraph(c_name, cell_style),
+                    Paragraph(c_phone, cell_style),
+                    Paragraph(o.get_order_type_display(), cell_style),
+                    Paragraph(o.get_status_display(), cell_style),
+                    Paragraph(f"₹{o.total_amount:,.2f}", cell_style)
+                ])
+            t_ord = Table(ord_data, colWidths=[0.8*inch, 1.8*inch, 1.2*inch, 1*inch, 1.2*inch, 1*inch])
+            t_ord.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#e8e8ed')),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#e8e8ed')),
+                ('PADDING', (0,0), (-1,-1), 4),
+            ]))
+            elements.append(t_ord)
+            elements.append(Spacer(1, 10))
+
+        if include_payments:
+            elements.append(Paragraph("3. Payment Reconciliation Ledger", h2_style))
+            pay_data = [[Paragraph("Order ID", cell_bold), Paragraph("Method", cell_bold), Paragraph("Gateway Txn ID", cell_bold), Paragraph("Amount", cell_bold), Paragraph("Status", cell_bold)]]
+            for p in payments_list[:30]:
+                pay_data.append([
+                    Paragraph(f"#{p.order.id}", cell_style),
+                    Paragraph(p.get_method_display(), cell_style),
+                    Paragraph(p.gateway_txn_id or "N/A (COD)", cell_style),
+                    Paragraph(f"₹{p.amount:,.2f}", cell_style),
+                    Paragraph(p.get_status_display(), cell_style)
+                ])
+            t_pay = Table(pay_data, colWidths=[0.8*inch, 1.5*inch, 2.2*inch, 1.2*inch, 1.3*inch])
+            t_pay.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#e8e8ed')),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#e8e8ed')),
+                ('PADDING', (0,0), (-1,-1), 4),
+            ]))
+            elements.append(t_pay)
+            elements.append(Spacer(1, 10))
+
+        if include_inventory:
+            elements.append(Paragraph("4. Inventory Stock & Product Audit", h2_style))
+            inv_data = [[Paragraph("Product", cell_bold), Paragraph("Category", cell_bold), Paragraph("Type", cell_bold), Paragraph("Stock Level", cell_bold)]]
+            for pr in products_list:
+                if pr.inventory_type == 'bulk':
+                    st_str = f"{pr.bulk_stock} {pr.bulk_unit}"
+                else:
+                    sl_strs = [f"{s.quantity_value}{s.get_quantity_unit_display()}: {s.stock}p" for s in pr.price_slabs.all()]
+                    st_str = ", ".join(sl_strs) if sl_strs else "No slabs"
+                inv_data.append([
+                    Paragraph(pr.name_en, cell_style),
+                    Paragraph(pr.category.name_en if pr.category else "-", cell_style),
+                    Paragraph(pr.inventory_type.upper(), cell_style),
+                    Paragraph(st_str, cell_style)
+                ])
+            t_inv = Table(inv_data, colWidths=[2.2*inch, 1.5*inch, 1*inch, 2.3*inch])
+            t_inv.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#e8e8ed')),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#e8e8ed')),
+                ('PADDING', (0,0), (-1,-1), 4),
+            ]))
+            elements.append(t_inv)
+
+        doc.build(elements)
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="smk_flour_shop_report_{now.strftime("%Y%m%d")}.pdf"'
+        return response
+
+    else:
+        context = {
+            'now': now,
+            'date_range': date_range,
+            'include_orders': include_orders,
+            'include_payments': include_payments,
+            'include_inventory': include_inventory,
+            'include_analytics': include_analytics,
+            'total_rev': total_rev,
+            'orders_list': orders_list,
+            'payments_list': payments_list,
+            'products_list': products_list,
+            'top_prods': top_prods,
+        }
+        return render(request, 'shop/report_print.html', context)
+
+@staff_member_required
+@require_POST
+def admin_update_smtp_config(request):
+    from shop.models import SmtpConfig
+    try:
+        config = SmtpConfig.objects.first()
+        if not config:
+            config = SmtpConfig()
+        
+        config.smtp_host = request.POST.get('smtp_host', 'smtp.gmail.com').strip()
+        config.smtp_port = int(request.POST.get('smtp_port', 587))
+        config.smtp_user = request.POST.get('smtp_user', '').strip()
+        config.smtp_password = request.POST.get('smtp_password', '').strip()
+        config.recipient_email = request.POST.get('recipient_email', '').strip()
+        config.auto_daily_email = request.POST.get('auto_daily_email') == 'true' or 'auto_daily_email' in request.POST
+        config.save()
+    except Exception as e:
+        if request.htmx:
+            return HttpResponse(f"Error saving SMTP config: {str(e)}", status=400)
+        return redirect('admin_dashboard')
+    
+    if request.htmx:
+        response = HttpResponse("SMTP Configuration Saved Successfully")
+        response['HX-Trigger'] = 'smtpConfigUpdated'
+        return response
+    return redirect('admin_dashboard')
+
+@staff_member_required
+@require_POST
+def admin_send_test_email_report(request):
+    from shop.models import SmtpConfig
+    from django.core.mail import EmailMessage, get_connection
+    
+    try:
+        config = SmtpConfig.objects.first()
+        if not config or not config.smtp_user or not config.recipient_email:
+            return HttpResponse("Please configure SMTP User and Recipient Email first.", status=400)
+        
+        from django.test import RequestFactory
+        req = RequestFactory().get('/admin-dashboard/generate-report/?format=pdf')
+        req.user = request.user
+        pdf_response = admin_generate_report(req)
+        pdf_data = pdf_response.content
+        
+        connection = get_connection(
+            host=config.smtp_host,
+            port=config.smtp_port,
+            username=config.smtp_user,
+            password=config.smtp_password,
+            use_tls=config.use_tls
+        )
+        
+        recipients = [e.strip() for e in config.recipient_email.split(',') if e.strip()]
+        
+        email = EmailMessage(
+            subject="SMK Flour Shop — Daily Business & Operations Report",
+            body="Hello,\n\nPlease find attached the business operations, live orders, payment reconciliation, and inventory audit report for SMK Flour Shop.\n\nBest regards,\nSMK Flour Shop Admin System",
+            from_email=config.smtp_user,
+            to=recipients,
+            connection=connection
+        )
+        email.attach('smk_flour_shop_report.pdf', pdf_data, 'application/pdf')
+        email.send(fail_silently=False)
+        
+        return HttpResponse("Email Report Sent Successfully!")
+    except Exception as e:
+        return HttpResponse(f"Error sending email: {str(e)}", status=500)

@@ -289,6 +289,9 @@
                 @click="currentTab = 'inventory'">
                 <i class="fa-solid fa-boxes-stacked"></i> Inventory Management
             </button>
+            <button class="dash-tab-btn" :class="currentTab === 'reports' ? 'active' : ''" @click="currentTab = 'reports'">
+                <i class="fa-solid fa-file-pdf"></i> Reports & SMTP Mail
+            </button>
         </div>
 
         <!-- TAB 1: LIVE ORDERS OPERATIONS -->
@@ -786,6 +789,128 @@
                     </div>
                 </form>
             </div>
+
+        <!-- TAB 6: REPORTS & SMTP MAIL -->
+        <div x-show="currentTab === 'reports'" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+                
+                <!-- Custom Report Generator Card -->
+                <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 14px; padding: 1.5rem; box-shadow: var(--shadow-sm);">
+                    <h3 style="font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.15rem; margin-top: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-file-invoice" style="color: var(--accent-color);"></i>
+                        Custom Report Generator & Exporter
+                    </h3>
+                    
+                    <form method="POST" action="{% url 'admin_generate_report' %}" target="_blank">
+                        {% csrf_token %}
+                        
+                        <div style="margin-bottom: 1.2rem;">
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--dark-brown); display: block; margin-bottom: 0.5rem;">
+                                Select Timeframe / Date Range:
+                            </label>
+                            <select name="date_range" style="width: 100%; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 0.8rem; font-size: 0.85rem; background-color: var(--bg-card);">
+                                <option value="today">Today's Activity</option>
+                                <option value="week">Past 7 Days</option>
+                                <option value="month">Past 30 Days</option>
+                                <option value="all" selected>All Time Historical Record</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-bottom: 1.2rem;">
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--dark-brown); display: block; margin-bottom: 0.5rem;">
+                                Choose Report Sections to Include:
+                            </label>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 0.6rem; background-color: var(--rice-cream); padding: 0.8rem; border-radius: 10px; border: 1px solid var(--border-color);">
+                                <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: var(--text-primary);">
+                                    <input type="checkbox" name="include_orders" value="true" checked style="width: 16px; height: 16px;">
+                                    <span><i class="fa-solid fa-clipboard-list" style="color: var(--terracotta);"></i> Live Orders List & Statuses</span>
+                                </label>
+                                <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: var(--text-primary);">
+                                    <input type="checkbox" name="include_payments" value="true" checked style="width: 16px; height: 16px;">
+                                    <span><i class="fa-solid fa-money-bill-wave" style="color: var(--banana-leaf);"></i> Payment Reconciliation Ledger</span>
+                                </label>
+                                <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: var(--text-primary);">
+                                    <input type="checkbox" name="include_inventory" value="true" checked style="width: 16px; height: 16px;">
+                                    <span><i class="fa-solid fa-boxes-stacked" style="color: var(--turmeric);"></i> Inventory Stock Audit</span>
+                                </label>
+                                <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: var(--text-primary);">
+                                    <input type="checkbox" name="include_analytics" value="true" checked style="width: 16px; height: 16px;">
+                                    <span><i class="fa-solid fa-chart-line" style="color: var(--accent-color);"></i> Analytics Summary & Best Sellers</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.8rem;">
+                            <button type="submit" name="format" value="pdf" class="btn-primary" style="flex: 1; height: 42px; font-weight: 700; border-radius: 10px; background-color: var(--dark-brown);">
+                                <i class="fa-solid fa-file-pdf"></i> Download PDF
+                            </button>
+                            <button type="submit" name="format" value="print" class="btn-primary" style="flex: 1; height: 42px; font-weight: 700; border-radius: 10px; background-color: var(--accent-color);">
+                                <i class="fa-solid fa-print"></i> Web / Print View
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- SMTP Mail Configuration & Daily Automation Card -->
+                <div style="background-color: white; border: 1px solid var(--border-color); border-radius: 14px; padding: 1.5rem; box-shadow: var(--shadow-sm);">
+                    <h3 style="font-family: var(--font-secondary); color: var(--dark-brown); font-size: 1.15rem; margin-top: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-envelope-open-text" style="color: var(--banana-leaf);"></i>
+                        SMTP Mail & Daily Email Dispatch
+                    </h3>
+
+                    <form hx-post="{% url 'admin_update_smtp_config' %}" hx-swap="none">
+                        {% csrf_token %}
+                        
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.8rem; margin-bottom: 0.8rem;">
+                            <div class="form-group-dash">
+                                <label>SMTP Host *</label>
+                                <input type="text" name="smtp_host" value="{{ smtp_config.smtp_host|default:'smtp.gmail.com' }}" placeholder="smtp.gmail.com" required>
+                            </div>
+                            <div class="form-group-dash">
+                                <label>Port *</label>
+                                <input type="number" name="smtp_port" value="{{ smtp_config.smtp_port|default:587 }}" required>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.8rem;">
+                            <div class="form-group-dash">
+                                <label>SMTP Username / Email *</label>
+                                <input type="email" name="smtp_user" value="{{ smtp_config.smtp_user }}" placeholder="your-email@gmail.com">
+                            </div>
+                            <div class="form-group-dash">
+                                <label>App Password *</label>
+                                <input type="password" name="smtp_password" value="{{ smtp_config.smtp_password }}" placeholder="App Password">
+                            </div>
+                        </div>
+
+                        <div class="form-group-dash" style="margin-bottom: 1rem;">
+                            <label>Report Recipient Email(s) *</label>
+                            <input type="text" name="recipient_email" value="{{ smtp_config.recipient_email }}" placeholder="admin@smk.com, owner@gmail.com">
+                        </div>
+
+                        <div style="margin-bottom: 1.2rem; background-color: var(--rice-cream); padding: 0.8rem; border-radius: 10px; border: 1px solid var(--border-color);">
+                            <label style="font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: var(--text-primary);">
+                                <input type="checkbox" name="auto_daily_email" value="true" {% if smtp_config.auto_daily_email %}checked{% endif %} style="width: 16px; height: 16px;">
+                                <span>Enable Automatic Daily Email Report Dispatch</span>
+                            </label>
+                        </div>
+
+                        <div style="display: flex; gap: 0.8rem;">
+                            <button type="submit" class="btn-primary" style="flex: 1; height: 40px; font-weight: 700; border-radius: 8px; background-color: #2e7d32;">
+                                <i class="fa-solid fa-floppy-disk"></i> Save SMTP Config
+                            </button>
+                            <button type="button" 
+                                    hx-post="{% url 'admin_send_test_email_report' %}" 
+                                    hx-swap="none"
+                                    class="btn-primary" style="flex: 1; height: 40px; font-weight: 700; border-radius: 8px; background-color: var(--terracotta);">
+                                <i class="fa-solid fa-paper-plane"></i> Send Email Now
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
             <!-- Add Product Popup Modal -->
             <div x-show="showAddProductModal"
