@@ -1427,23 +1427,29 @@ def admin_update_inventory(request):
     if target_type == 'bulk':
         product_id = request.POST.get('product_id')
         product = get_object_or_404(Product, id=product_id)
+        raw_val = request.POST.get('value')
+        if raw_val is None:
+            raw_val = request.POST.get(f'bulk_stock_{product_id}', '0')
         try:
-            product.bulk_stock = Decimal(request.POST.get('value', '0'))
+            product.bulk_stock = Decimal(raw_val)
             product.save(update_fields=['bulk_stock'])
         except Exception:
             pass
     elif target_type == 'packaged':
         slab_id = request.POST.get('slab_id')
         slab = get_object_or_404(PriceSlab, id=slab_id)
+        raw_val = request.POST.get('value')
+        if raw_val is None:
+            raw_val = request.POST.get(f'slab_stock_{slab_id}', '0')
         try:
-            slab.stock = int(request.POST.get('value', '0'))
+            slab.stock = int(Decimal(raw_val))
             slab.save(update_fields=['stock'])
         except Exception:
             pass
     elif target_type == 'product_config':
         product_id = request.POST.get('product_id')
         product = get_object_or_404(Product, id=product_id)
-        inventory_type = request.POST.get('inventory_type')
+        inventory_type = request.POST.get(f'inventory_type_{product_id}') or request.POST.get('inventory_type')
         bulk_unit = request.POST.get('bulk_unit')
         if inventory_type in ['bulk', 'packaged']:
             product.inventory_type = inventory_type
@@ -1451,9 +1457,9 @@ def admin_update_inventory(request):
             product.bulk_unit = bulk_unit
         product.save()
         
-    if request.htmx:
+    if getattr(request, 'htmx', False) or request.headers.get('HX-Request'):
         response = HttpResponse("")
-        response['HX-Trigger'] = 'inventoryUpdated'
+        response['HX-Refresh'] = 'true'
         return response
         
     return redirect('admin_dashboard')
