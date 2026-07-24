@@ -392,18 +392,15 @@
                         {% if payments %}
                         {% for p in payments %}
                         <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ p.order.id
-                                }}</td>
+                            <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ p.order.id }}</td>
                             <td style="padding: 0.8rem 1rem;">
                                 <div style="font-weight: 600;">{{ p.order.customer.name }}</div>
                                 <div style="font-size: 0.75rem; color: #887B75;">{{ p.order.customer.phone_number }}
                                 </div>
                             </td>
                             <td style="padding: 0.8rem 1rem;">{{ p.get_method_display }}</td>
-                            <td style="padding: 0.8rem 1rem; font-family: monospace; font-size: 0.8rem; color: #555;">{{
-                                p.gateway_txn_id|default:"N/A (COD)" }}</td>
-                            <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">₹{{ p.amount
-                                }}</td>
+                            <td style="padding: 0.8rem 1rem; font-family: monospace; font-size: 0.8rem; color: #555;">{{ p.gateway_txn_id|default:"N/A (COD)" }}</td>
+                            <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">₹{{ p.amount }}</td>
                             <td style="padding: 0.8rem 1rem;">
                                 <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
                                             {% if p.status == 'completed' %}color: var(--banana-leaf);
@@ -413,8 +410,7 @@
                                     {{ p.get_status_display }}
                                 </span>
                             </td>
-                            <td style="padding: 0.8rem 1rem; color: #665C58;">{{ p.paid_at|date:"d M Y, h:i
-                                A"|default:"Unpaid" }}</td>
+                            <td style="padding: 0.8rem 1rem; color: #665C58;">{{ p.paid_at|date:"d M Y, h:i A"|default:"Unpaid" }}</td>
                         </tr>
                         {% endfor %}
                         {% else %}
@@ -437,8 +433,7 @@
                 style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="metric-card">
                     <span class="metric-title">Today's Total Revenue</span>
-                    <span class="metric-value" style="color: var(--banana-leaf);">₹{{ today_sales|floatformat:2
-                        }}</span>
+                    <span class="metric-value" style="color: var(--banana-leaf);">₹{{ today_sales|floatformat:2 }}</span>
                 </div>
                 <div class="metric-card">
                     <span class="metric-title">Today's Orders Placed</span>
@@ -475,8 +470,7 @@
                             <td style="padding: 0.8rem 0.5rem;">
                                 <strong>{{ item.product__name_en }}</strong>
                                 <span class="tamil-text"
-                                    style="color: var(--banana-leaf); font-size: 0.8rem; margin-left: 0.4rem;">{{
-                                    item.product__name_ta }}</span>
+                                    style="color: var(--banana-leaf); font-size: 0.8rem; margin-left: 0.4rem;">{{ item.product__name_ta }}</span>
                             </td>
                             <td
                                 style="padding: 0.8rem 0.5rem; text-align: right; font-weight: 700; color: var(--terracotta);">
@@ -559,8 +553,7 @@
                         {% if active_deliveries %}
                         {% for order in active_deliveries %}
                         <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ order.id
-                                }}</td>
+                            <td style="padding: 0.8rem 1rem; font-weight: 700; color: var(--dark-brown);">#{{ order.id }}</td>
                             <td style="padding: 0.8rem 1rem;">
                                 <div style="font-weight: 600;">{{ order.customer.name }}</div>
                                 <div style="font-size: 0.75rem; color: #887B75;">{{ order.customer.phone_number }}</div>
@@ -599,14 +592,12 @@
                                         hx-vals='{"order_id": "{{ order.id }}", "status": "completed"}' hx-swap="none"
                                         hx-include="this" class="btn-primary"
                                         style="height: 32px; width: auto; padding: 0 0.8rem; font-size: 0.75rem; background-color: var(--warning-color); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.2rem;">
-                                        <i class="fa-solid fa-cash-register"></i> Collect Cash (₹{{
-                                        order.total_amount|floatformat:2 }})
+                                        <i class="fa-solid fa-cash-register"></i> Collect Cash (₹{{ order.total_amount|floatformat:2 }})
                                     </button>
                                     {% else %}
                                     <span
                                         style="color: var(--success-color); font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.2rem; margin-top: 0.2rem;">
-                                        <i class="fa-solid fa-circle-check"></i> Paid (₹{{
-                                        order.total_amount|floatformat:2 }})
+                                        <i class="fa-solid fa-circle-check"></i> Paid (₹{{ order.total_amount|floatformat:2 }})
                                     </span>
                                     {% endif %}
                                 </div>
@@ -746,8 +737,7 @@
                                             <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
                                                 <div
                                                     style="font-size: 0.75rem; min-width: 140px; color: var(--text-secondary);">
-                                                    {{ slab.quantity_value }} {{ slab.get_quantity_unit_display }} (₹{{
-                                                    slab.price }})
+                                                    {{ slab.quantity_value }} {{ slab.get_quantity_unit_display }} (₹{{ slab.price }})
                                                 </div>
                                                 <div style="font-weight: 600; font-size: 0.8rem; min-width: 80px;">
                                                     {{ slab.stock }} packs
@@ -1183,8 +1173,7 @@
         <!-- Chart.js Initializer -->
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                var salesTrendLabels = {{ sales_trend_labels_json| safe
-            }};
+                var salesTrendLabels = {{ sales_trend_labels_json| safe }};
             var salesTrendValues = {{ sales_trend_values_json| safe }};
             var hourlyLabels = {{ hourly_labels_json| safe }};
             var hourlyValues = {{ hourly_values_json| safe }};
