@@ -1,6 +1,6 @@
 import qrcode
 
-url = "https://smkmaavukadai.duckdns.org/"
+url = "https://maps.app.goo.gl/5YMcy55AGxmJ5U5HA"
 
 qr = qrcode.QRCode(
     version=1,
@@ -13,6 +13,7 @@ qr.add_data(url)
 qr.make(fit=True)
 
 img = qr.make_image(fill_color="black", back_color="white")
-img.save("smkmaavukadai_qr.png")
+img.save("location_for_the_shop.png")
 
-print("QR code saved as smkmaavukadai_qr.png")
+print("QR code saved as location_for_the_shop.png")
+    
