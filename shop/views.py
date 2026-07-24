@@ -3,8 +3,14 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-import razorpay
-from .models import Product, Category, PriceSlab
+from django.utils import timezone
+from datetime import timedelta
+try:
+    import razorpay
+except ImportError:
+    razorpay = None
+
+from .models import Product, Category, PriceSlab, Order, OrderItem, Payment, Customer, Address
 
 # Initialize Razorpay Client
 razorpay_client = None
@@ -628,7 +634,7 @@ def admin_dashboard(request):
     from django.db.models import Count
     
     # 7-day Daily Sales Trend
-    seven_days_ago = today - timezone.timedelta(days=6)
+    seven_days_ago = today - timedelta(days=6)
     sales_trend_qs = Payment.objects.filter(
         created_at__date__gte=seven_days_ago,
         status='completed'
@@ -637,7 +643,7 @@ def admin_dashboard(request):
     ).order_by('date')
     
     # Pre-fill all 7 days with 0.0 to ensure continuous line chart
-    sales_trend_dict = { (today - timezone.timedelta(days=i)): 0.0 for i in range(7) }
+    sales_trend_dict = { (today - timedelta(days=i)): 0.0 for i in range(7) }
     for item in sales_trend_qs:
         if item['date'] in sales_trend_dict:
             sales_trend_dict[item['date']] = float(item['total'])
