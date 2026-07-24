@@ -1773,25 +1773,38 @@ def admin_generate_report(request):
 @require_POST
 def admin_update_smtp_config(request):
     from shop.models import SmtpConfig
+    action = request.POST.get('action', 'save')
+    
     try:
         config = SmtpConfig.objects.first()
         if not config:
             config = SmtpConfig()
         
-        config.smtp_host = request.POST.get('smtp_host', 'smtp.gmail.com').strip()
-        config.smtp_port = int(request.POST.get('smtp_port', 587))
-        config.smtp_user = request.POST.get('smtp_user', '').strip()
-        config.smtp_password = request.POST.get('smtp_password', '').strip()
-        config.recipient_email = request.POST.get('recipient_email', '').strip()
-        config.auto_daily_email = request.POST.get('auto_daily_email') == 'true' or 'auto_daily_email' in request.POST
-        config.save()
+        if action == 'clear':
+            config.smtp_user = ''
+            config.smtp_password = ''
+            config.recipient_email = ''
+            config.auto_daily_email = False
+            config.save()
+            msg = '<div style="padding: 0.8rem; background-color: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-trash-can"></i> SMTP Configuration Reset & Cleared Successfully!</div>'
+        else:
+            config.smtp_host = request.POST.get('smtp_host', 'smtp.gmail.com').strip()
+            config.smtp_port = int(request.POST.get('smtp_port', 587))
+            config.smtp_user = request.POST.get('smtp_user', '').strip()
+            config.smtp_password = request.POST.get('smtp_password', '').strip()
+            config.recipient_email = request.POST.get('recipient_email', '').strip()
+            config.auto_daily_email = request.POST.get('auto_daily_email') == 'true' or 'auto_daily_email' in request.POST
+            config.save()
+            msg = '<div style="padding: 0.8rem; background-color: #def7ec; border: 1px solid #84e1bc; color: #03543f; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-circle-check"></i> SMTP Configuration Saved Successfully!</div>'
+            
     except Exception as e:
-        if request.htmx:
-            return HttpResponse(f"Error saving SMTP config: {str(e)}", status=400)
+        msg = f'<div style="padding: 0.8rem; background-color: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Error saving configuration: {str(e)}</div>'
+        if getattr(request, 'htmx', False) or request.headers.get('HX-Request'):
+            return HttpResponse(msg, status=400)
         return redirect('admin_dashboard')
     
-    if request.htmx:
-        response = HttpResponse("SMTP Configuration Saved Successfully")
+    if getattr(request, 'htmx', False) or request.headers.get('HX-Request'):
+        response = HttpResponse(msg)
         response['HX-Trigger'] = 'smtpConfigUpdated'
         return response
     return redirect('admin_dashboard')
@@ -1799,13 +1812,15 @@ def admin_update_smtp_config(request):
 @staff_member_required
 @require_POST
 def admin_send_test_email_report(request):
-    from shop.models import SmtpConfig
-    from django.core.mail import EmailMessage, get_connection
-    
+    from shop.models import SmtpConfig, Order, Payment, Product
+    from django.core.mail import EmailMultiAlternatives, get_connection
+    from django.db.models import Sum
+    from django.utils import timezone
+
     try:
         config = SmtpConfig.objects.first()
         if not config or not config.smtp_user or not config.recipient_email:
-            return HttpResponse("Please configure SMTP User and Recipient Email first.", status=400)
+            return HttpResponse('<div style="padding: 0.8rem; background-color: #feecdc; border: 1px solid #fbd5a5; color: #b43403; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Please configure SMTP User and Recipient Email first!</div>', status=400)
         
         from django.test import RequestFactory
         req = RequestFactory().get('/admin-dashboard/generate-report/?format=pdf')
@@ -1823,16 +1838,101 @@ def admin_send_test_email_report(request):
         
         recipients = [e.strip() for e in config.recipient_email.split(',') if e.strip()]
         
-        email = EmailMessage(
-            subject="SMK Flour Shop — Daily Business & Operations Report",
-            body="Hello,\n\nPlease find attached the business operations, live orders, payment reconciliation, and inventory audit report for SMK Flour Shop.\n\nBest regards,\nSMK Flour Shop Admin System",
+        now_str = timezone.localtime(timezone.now()).strftime('%d %b %Y, %I:%M %p')
+        today_date = timezone.localtime(timezone.now()).date()
+        total_rev = Payment.objects.filter(status='completed').aggregate(total=Sum('amount'))['total'] or 0.0
+        total_orders = Order.objects.count()
+        today_orders = Order.objects.filter(created_at__date=today_date).count()
+        pending_deliveries = Order.objects.filter(order_type='delivery', status__in=['received', 'preparing', 'ready']).count()
+        low_stock_count = Product.objects.filter(inventory_type='bulk', bulk_stock__lt=10.0).count()
+        site_url = getattr(settings, 'SITE_URL', 'https://smk-flour-shop.onrender.com')
+
+        text_content = f"SMK Flour Shop — Operations & Business Report\nGenerated: {now_str}\nTotal Revenue: ₹{total_rev:,.2f}\nTotal Orders: {total_orders}\n\nPlease view the attached PDF."
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #fdfbf7; margin: 0; padding: 20px; color: #2c2420; }}
+                .email-container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2dad0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
+                .email-header {{ background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); padding: 25px 30px; text-align: center; color: #ffffff; }}
+                .email-header h1 {{ margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }}
+                .email-header p {{ margin: 5px 0 0 0; font-size: 13px; opacity: 0.9; }}
+                .email-body {{ padding: 30px; }}
+                .metric-grid {{ display: table; width: 100%; margin-bottom: 25px; border-spacing: 10px; }}
+                .metric-cell {{ display: table-cell; width: 50%; background-color: #f7f3ed; padding: 15px; border-radius: 12px; border: 1px solid #e8e0d5; text-align: center; }}
+                .metric-label {{ font-size: 11px; font-weight: 700; text-transform: uppercase; color: #7a6e65; letter-spacing: 0.5px; }}
+                .metric-val {{ font-size: 22px; font-weight: 800; color: #2e7d32; margin-top: 5px; }}
+                .section-header {{ font-size: 15px; font-weight: 700; color: #8d2f00; margin-bottom: 12px; border-bottom: 2px solid #f2e9de; padding-bottom: 6px; }}
+                .detail-table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }}
+                .detail-table td {{ padding: 10px 12px; border-bottom: 1px solid #f2e9de; }}
+                .btn-cta {{ display: inline-block; background-color: #8d2f00; color: #ffffff !important; padding: 12px 25px; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 14px; margin-top: 15px; }}
+                .email-footer {{ background-color: #f7f3ed; padding: 20px; text-align: center; font-size: 12px; color: #7a6e65; border-top: 1px solid #e8e0d5; }}
+            </style>
+        </head>
+        <body>
+            <div class="email-container">
+                <div class="email-header">
+                    <h1>🌾 SMK MAAVU KADAI</h1>
+                    <p>Daily Business & Operations Executive Summary</p>
+                </div>
+                <div class="email-body">
+                    <p style="font-size: 14px; margin-top: 0;">Hello Management,</p>
+                    <p style="font-size: 13px; color: #5a5048;">Here is your automated business performance snapshot generated on <strong>{now_str}</strong>. The complete PDF report is also attached to this email.</p>
+                    
+                    <div class="metric-grid">
+                        <div class="metric-cell">
+                            <div class="metric-label">Total Revenue Collected</div>
+                            <div class="metric-val">₹{total_rev:,.2f}</div>
+                        </div>
+                        <div class="metric-cell">
+                            <div class="metric-label">Today's Orders</div>
+                            <div class="metric-val" style="color: #8d2f00;">{today_orders}</div>
+                        </div>
+                    </div>
+
+                    <div class="section-header">📊 Business Snapshot Highlights</div>
+                    <table class="detail-table">
+                        <tr>
+                            <td><strong>Total Orders All-Time:</strong></td>
+                            <td style="text-align: right; font-weight: 700;">{total_orders} orders</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pending Deliveries:</strong></td>
+                            <td style="text-align: right; font-weight: 700; color: #e67e22;">{pending_deliveries} active</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Low Stock Alerts (&lt;10kg):</strong></td>
+                            <td style="text-align: right; font-weight: 700; color: #c0392b;">{low_stock_count} products</td>
+                        </tr>
+                    </table>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <a href="{site_url}/admin-dashboard/" class="btn-cta">🚀 Open Admin Dashboard</a>
+                    </div>
+                </div>
+                <div class="email-footer">
+                    <strong>SMK Flour Shop Management System</strong><br>
+                    Fresh Quality Batters & Traditional Products | Operations Automation
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        email = EmailMultiAlternatives(
+            subject=f"🌾 SMK Flour Shop — Business Operations Report ({now_str})",
+            body=text_content,
             from_email=config.smtp_user,
             to=recipients,
             connection=connection
         )
+        email.attach_alternative(html_content, "text/html")
         email.attach('smk_flour_shop_report.pdf', pdf_data, 'application/pdf')
         email.send(fail_silently=False)
         
-        return HttpResponse("Email Report Sent Successfully!")
+        return HttpResponse(f'<div style="padding: 0.8rem; background-color: #def7ec; border: 1px solid #84e1bc; color: #03543f; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-paper-plane"></i> Email Report Sent Successfully to {", ".join(recipients)}!</div>')
     except Exception as e:
-        return HttpResponse(f"Error sending email: {str(e)}", status=500)
+        return HttpResponse(f'<div style="padding: 0.8rem; background-color: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Error sending email: {str(e)}</div>', status=500)

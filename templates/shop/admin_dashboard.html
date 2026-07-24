@@ -856,7 +856,9 @@
                         SMTP Mail & Daily Email Dispatch
                     </h3>
 
-                    <form hx-post="{% url 'admin_update_smtp_config' %}" hx-swap="none">
+                    <div id="smtp-feedback-msg"></div>
+
+                    <form hx-post="{% url 'admin_update_smtp_config' %}" hx-target="#smtp-feedback-msg" hx-swap="innerHTML">
                         {% csrf_token %}
                         
                         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.8rem; margin-bottom: 0.8rem;">
@@ -893,15 +895,21 @@
                             </label>
                         </div>
 
-                        <div style="display: flex; gap: 0.8rem;">
-                            <button type="submit" class="btn-primary" style="flex: 1; height: 40px; font-weight: 700; border-radius: 8px; background-color: #2e7d32;">
+                        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                            <button type="submit" name="action" value="save" class="btn-primary" style="flex: 1.5; height: 40px; font-weight: 700; border-radius: 8px; background-color: #2e7d32;">
                                 <i class="fa-solid fa-floppy-disk"></i> Save SMTP Config
                             </button>
                             <button type="button" 
                                     hx-post="{% url 'admin_send_test_email_report' %}" 
-                                    hx-swap="none"
-                                    class="btn-primary" style="flex: 1; height: 40px; font-weight: 700; border-radius: 8px; background-color: var(--terracotta);">
+                                    hx-target="#smtp-feedback-msg"
+                                    hx-swap="innerHTML"
+                                    class="btn-primary" style="flex: 1.5; height: 40px; font-weight: 700; border-radius: 8px; background-color: var(--accent-color);">
                                 <i class="fa-solid fa-paper-plane"></i> Send Email Now
+                            </button>
+                            <button type="submit" name="action" value="clear"
+                                    hx-confirm="Are you sure you want to reset and clear your SMTP credentials?"
+                                    class="btn-primary" style="flex: 1; height: 40px; font-weight: 700; border-radius: 8px; background-color: var(--terracotta);">
+                                <i class="fa-solid fa-trash-can"></i> Reset
                             </button>
                         </div>
                     </form>
