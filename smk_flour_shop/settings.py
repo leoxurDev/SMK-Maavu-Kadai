@@ -1,19 +1,23 @@
 import os
 from pathlib import Path
-import environ
-import dj_database_url
 
-# Initialize environ
-env = environ.Env(
-    # set casting, default value
-    DEBUG=(bool, False)
-)
+try:
+    import environ
+    env = environ.Env(DEBUG=(bool, False))
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+except Exception:
+    class DummyEnv:
+        def str(self, k, default=''): return os.environ.get(k, default)
+        def bool(self, k, default=False): return os.environ.get(k, str(default)).lower() in ('true', '1')
+        def list(self, k, default=None): return default or ['*']
+    env = DummyEnv()
+    BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Read .env file if it exists
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -94,7 +98,7 @@ ASGI_APPLICATION = 'smk_flour_shop.asgi.application'
 DATABASE_URL = env.str('DATABASE_URL', default='')
 DB_ENGINE = env.str('DB_ENGINE', default='sqlite')
 
-if DATABASE_URL:
+if DATABASE_URL and dj_database_url:
     # Render.com provides DATABASE_URL automatically
     DATABASES = {
         'default': dj_database_url.config(
