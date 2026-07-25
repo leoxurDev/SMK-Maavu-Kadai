@@ -54,20 +54,10 @@
         {% else %}
             <!-- STEP 2: OTP Verification entry -->
             
-            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; text-align: center; font-size: 0.8rem; color: #166534; font-weight: 600;">
-                <div style="margin-bottom: 0.6rem;">
-                    <i class="fa-solid fa-shield-halved" style="color: var(--banana-leaf);"></i>
-                    <span x-show="lang === 'en' || lang === 'both'">Verification code requested for <strong>+91 {{ phone_number }}</strong></span>
-                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text"><strong>+91 {{ phone_number }}</strong> எண்ணிற்கு OTP கோரப்பட்டது</span>
-                </div>
-                
-                <a href="https://api.whatsapp.com/send?phone=91{{ phone_number }}&text=Hello%20SMK%20Flour%20Shop%2C%20please%20send%20my%20login%20verification%20code%20for%20mobile%2091{{ phone_number }}" 
-                   target="_blank" 
-                   style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background-color: #25D366; color: white; padding: 0.55rem 1.2rem; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 0.85rem; margin-top: 0.2rem; box-shadow: 0 3px 8px rgba(37,211,102,0.3); transition: var(--transition-smooth);">
-                    <i class="fa-brands fa-whatsapp" style="font-size: 1.15rem;"></i>
-                    <span x-show="lang === 'en' || lang === 'both'">📲 Get Free OTP on WhatsApp</span>
-                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">WhatsApp மூலம் பெறுக</span>
-                </a>
+            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 0.8rem; margin-bottom: 1.2rem; text-align: center; font-size: 0.8rem; color: #166534; font-weight: 600;">
+                <i class="fa-solid fa-shield-halved" style="color: var(--banana-leaf);"></i>
+                <span x-show="lang === 'en' || lang === 'both'">Verification code sent to <strong>+91 {{ phone_number }}</strong></span>
+                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text"><strong>+91 {{ phone_number }}</strong> எண்ணிற்கு OTP அனுப்பப்பட்டது</span>
             </div>
 
             <form method="POST" action="{% url 'verify_otp' %}" style="display: flex; flex-direction: column; gap: 1.2rem;">
