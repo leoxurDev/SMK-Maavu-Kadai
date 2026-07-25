@@ -52,7 +52,6 @@
                 </button>
             </form>
 
-            {% if google_client_id %}
             <!-- OR Divider -->
             <div style="display: flex; align-items: center; margin: 1.5rem 0 1rem 0; color: var(--text-secondary); font-size: 0.75rem; font-weight: 700;">
                 <div style="flex: 1; height: 1px; background-color: var(--border-color);"></div>
@@ -88,7 +87,7 @@
             </script>
 
             <div id="g_id_onload"
-                 data-client_id="{{ google_client_id }}"
+                 data-client_id="{{ google_client_id|default:'' }}"
                  data-callback="handleGoogleCredentialResponse"
                  data-auto_prompt="false">
             </div>
@@ -104,7 +103,6 @@
                      data-width="350">
                 </div>
             </div>
-            {% endif %}
         {% else %}
             <!-- STEP 2: OTP Verification entry -->
             
