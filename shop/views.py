@@ -10,7 +10,7 @@ try:
 except ImportError:
     razorpay = None
 
-from .models import Product, Category, PriceSlab, Order, OrderItem, Payment, Customer, Address
+from .models import Product, Category, PriceSlab, Order, OrderItem, Payment, Customer, Address, DeliverySettings, CustomerOtpLog
 
 # Initialize Razorpay Client
 razorpay_client = None
