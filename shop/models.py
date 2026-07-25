@@ -64,6 +64,21 @@ class Product(models.Model):
     description_en = models.TextField("Description (English)", blank=True)
     description_ta = models.TextField("Description (Tamil)", blank=True)
     image = models.ImageField(upload_to='products/', null=True, blank=True)
+    image_url = models.URLField("External Image URL / Link", max_length=500, blank=True, null=True)
+
+    @property
+    def image_src(self):
+        if self.image and hasattr(self.image, 'name') and self.image.name:
+            import os
+            try:
+                if hasattr(self.image, 'path') and os.path.exists(self.image.path):
+                    return self.image.url
+            except Exception:
+                pass
+            return f"/media/{self.image.name}"
+        if self.image_url:
+            return self.image_url
+        return '/static/images/default_product.jpg'
     is_active = models.BooleanField(default=True)
     INVENTORY_CHOICES = [
         ('packaged', 'Packaged Units (by Packets/Slabs)'),

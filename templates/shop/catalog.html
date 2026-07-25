@@ -139,8 +139,8 @@
                                 }
                             }">
                                 <div class="product-img-container">
-                                    {% if product.image %}
-                                        <img src="{{ product.image.url }}" alt="{{ product.name_en }}" class="product-img">
+                                    {% if product.image_src %}
+                                        <img src="{{ product.image_src }}" alt="{{ product.name_en }}" class="product-img" onerror="this.onerror=null; this.src='/static/images/default_product.jpg';">
                                     {% else %}
                                         <div class="product-placeholder">
                                             <i class="fa-solid fa-bowl-rice"></i>
@@ -283,8 +283,8 @@
                             }
                         }">
                             <div class="product-img-container">
-                                {% if product.image %}
-                                    <img src="{{ product.image.url }}" alt="{{ product.name_en }}" class="product-img">
+                                {% if product.image_src %}
+                                    <img src="{{ product.image_src }}" alt="{{ product.name_en }}" class="product-img" onerror="this.onerror=null; this.src='/static/images/default_product.jpg';">
                                 {% else %}
                                     <div class="product-placeholder">
                                         <i class="fa-solid fa-bowl-rice"></i>

@@ -1568,6 +1568,7 @@ def admin_create_product(request):
     description_en = request.POST.get('description_en', '')
     description_ta = request.POST.get('description_ta', '')
     image_file = request.FILES.get('image')
+    image_url = request.POST.get('image_url', '').strip()
     
     inventory_type = request.POST.get('inventory_type', 'packaged')
     bulk_stock_val = request.POST.get('bulk_stock', '100.00')
@@ -1582,6 +1583,7 @@ def admin_create_product(request):
         description_en=description_en,
         description_ta=description_ta,
         image=image_file,
+        image_url=image_url if image_url else None,
         inventory_type=inventory_type,
         bulk_stock=Decimal(bulk_stock_val),
         bulk_unit=bulk_unit
