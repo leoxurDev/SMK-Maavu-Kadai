@@ -1047,9 +1047,9 @@
                             </p>
                         </div>
 
-                        <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
-                            <input type="checkbox" name="enable_online_payment" {% if delivery_settings.enable_online_payment %}checked{% endif %} style="width: 20px; height: 20px; accent-color: var(--banana-leaf);">
-                            <span>{% if delivery_settings.enable_online_payment %}ONLINE PAYMENT ENABLED{% else %}ONLINE PAYMENT DISABLED{% endif %}</span>
+                        <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);" x-data="{ enabled: {% if delivery_settings.enable_online_payment %}true{% else %}false{% endif %} }">
+                            <input type="checkbox" name="enable_online_payment" x-model="enabled" style="width: 22px; height: 22px; accent-color: var(--banana-leaf); cursor: pointer;">
+                            <span x-text="enabled ? 'ONLINE PAYMENT ENABLED' : 'ONLINE PAYMENT DISABLED'" :style="enabled ? 'color: var(--success-color);' : 'color: var(--danger-color);'"></span>
                         </label>
                     </div>
 

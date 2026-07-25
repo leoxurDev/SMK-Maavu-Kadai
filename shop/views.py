@@ -726,11 +726,18 @@ def admin_dashboard(request):
     all_products = Product.objects.all().prefetch_related('price_slabs').order_by('category__display_order', 'name_en')
     categories = Category.objects.all().order_by('display_order', 'name_en')
 
+    from shop.models import SmtpConfig, CustomerOtpLog, DeliverySettings
     try:
-        from shop.models import SmtpConfig
         smtp_config = SmtpConfig.objects.first()
     except Exception:
         smtp_config = None
+        
+    try:
+        otp_logs = CustomerOtpLog.objects.all().order_by('-created_at')[:30]
+    except Exception:
+        otp_logs = []
+        
+    delivery_settings = DeliverySettings.get_settings()
 
     context = {
         'today_sales': today_sales,
@@ -751,6 +758,8 @@ def admin_dashboard(request):
         'all_products': all_products,
         'categories': categories,
         'smtp_config': smtp_config,
+        'otp_logs': otp_logs,
+        'delivery_settings': delivery_settings,
     }
     
     return render(request, 'shop/admin_dashboard.html', context)
@@ -2101,11 +2110,11 @@ def admin_update_delivery_settings(request):
     from shop.models import DeliverySettings
     from decimal import Decimal
     
-    settings_obj, _ = DeliverySettings.objects.get_or_create(id=1)
+    settings_obj = DeliverySettings.get_settings()
     
     cost_per_km = request.POST.get('cost_per_km')
     base_fee = request.POST.get('base_delivery_fee')
-    enable_online = request.POST.get('enable_online_payment') in ['on', 'true', '1']
+    enable_online = 'enable_online_payment' in request.POST
     
     if cost_per_km:
         try:
@@ -2123,6 +2132,8 @@ def admin_update_delivery_settings(request):
     settings_obj.save()
     
     if getattr(request, 'htmx', False) or request.headers.get('HX-Request'):
-        return HttpResponse('<div style="padding: 0.8rem; background-color: #def7ec; border: 1px solid #84e1bc; color: #03543f; border-radius: 8px; font-weight: 600; margin-top: 0.5rem; font-size: 0.85rem;"><i class="fa-solid fa-circle-check"></i> Delivery & Payment Settings Saved Successfully!</div>')
+        response = HttpResponse('<div style="padding: 0.8rem; background-color: #def7ec; border: 1px solid #84e1bc; color: #03543f; border-radius: 8px; font-weight: 600; margin-top: 0.5rem; font-size: 0.85rem;"><i class="fa-solid fa-circle-check"></i> Delivery & Payment Settings Saved Successfully!</div>')
+        response['HX-Refresh'] = 'true'
+        return response
         
     return redirect('admin_dashboard')

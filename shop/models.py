@@ -318,5 +318,12 @@ class DeliverySettings(models.Model):
     enable_online_payment = models.BooleanField("Enable Online Payment (UPI / Razorpay)", default=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @classmethod
+    def get_settings(cls):
+        obj = cls.objects.first()
+        if not obj:
+            obj = cls.objects.create(cost_per_km=15.00, base_delivery_fee=20.00, enable_online_payment=True)
+        return obj
+
     def __str__(self):
         return f"Delivery Settings (₹{self.cost_per_km}/km, Base: ₹{self.base_delivery_fee}, Online Payment: {self.enable_online_payment})"

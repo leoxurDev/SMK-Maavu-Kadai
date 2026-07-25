@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Shop, Category, Product, PriceSlab, Customer, Address, Order, OrderItem, Payment
+from .models import Shop, Category, Product, PriceSlab, Customer, Address, Order, OrderItem, Payment, SmtpConfig, CustomerOtpLog, DeliverySettings
 
 class PriceSlabInline(admin.TabularInline):
     model = PriceSlab
@@ -78,3 +78,21 @@ class PaymentAdmin(admin.ModelAdmin):
     search_fields = ('order__id', 'gateway_txn_id', 'order__customer__phone_number')
     readonly_fields = ('created_at',)
     ordering = ('-created_at',)
+
+@admin.register(CustomerOtpLog)
+class CustomerOtpLogAdmin(admin.ModelAdmin):
+    list_display = ('phone_number', 'otp_code', 'is_verified', 'created_at')
+    list_filter = ('is_verified', 'created_at')
+    search_fields = ('phone_number', 'otp_code')
+    readonly_fields = ('created_at',)
+    ordering = ('-created_at',)
+
+@admin.register(DeliverySettings)
+class DeliverySettingsAdmin(admin.ModelAdmin):
+    list_display = ('base_delivery_fee', 'cost_per_km', 'enable_online_payment', 'updated_at')
+    readonly_fields = ('updated_at',)
+
+@admin.register(SmtpConfig)
+class SmtpConfigAdmin(admin.ModelAdmin):
+    list_display = ('smtp_host', 'smtp_port', 'smtp_user', 'recipient_email', 'auto_daily_email', 'updated_at')
+    readonly_fields = ('updated_at',)
