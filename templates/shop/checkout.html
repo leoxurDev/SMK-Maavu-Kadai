@@ -345,6 +345,7 @@
                     </label>
 
                     <!-- Razorpay option -->
+                    {% if enable_online_payment %}
                     <label style="display: flex; align-items: center; gap: 0.6rem; border: 1px solid var(--border-color); padding: 0.8rem; border-radius: 8px; cursor: pointer; transition: var(--transition-smooth);"
                            onmouseover="this.style.borderColor='var(--terracotta)'"
                            onmouseout="this.style.borderColor='var(--border-color)'">
@@ -357,6 +358,11 @@
                             <div style="font-size: 0.75rem; color: #887B75;" x-show="lang === 'ta' || lang === 'both'" class="tamil-text">ஆன்லைன் மூலமாக செலுத்துதல் (Razorpay)</div>
                         </div>
                     </label>
+                    {% else %}
+                    <div style="background-color: #fef3c7; border: 1px solid #fde68a; color: #92400e; padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">
+                        <i class="fa-solid fa-info-circle"></i> Online payments are temporarily disabled. Cash on Delivery is enabled.
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 

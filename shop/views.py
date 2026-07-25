@@ -283,12 +283,13 @@ def calculate_delivery(request):
         """
         return HttpResponse(html)
         
-    delivery_fee = round(distance * 10, 2)
+    delivery_settings, _ = DeliverySettings.objects.get_or_create(id=1)
+    delivery_fee = round(float(delivery_settings.base_delivery_fee) + (distance * float(delivery_settings.cost_per_km)), 2)
     final_total = cart_total + delivery_fee
     
     html = f"""
     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" id="delivery-fee-container">
-        <span x-show="lang === 'en' || lang === 'both'">Delivery Fee ({distance:.2f} km)</span>
+        <span x-show="lang === 'en' || lang === 'both'">Delivery Fee ({distance:.2f} km @ ₹{delivery_settings.cost_per_km}/km)</span>
         <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">டெலிவரி கட்டணம் ({distance:.2f} கி.மீ)</span>
         <span style="font-weight: 700; color: var(--success-color);">₹{delivery_fee:.2f}</span>
     </div>
@@ -308,6 +309,9 @@ def checkout(request):
         
     # Get cart details using context processor calculations
     cart_data = cart_processor(request)
+    delivery_settings, _ = DeliverySettings.objects.get_or_create(id=1)
+    cart_data['enable_online_payment'] = delivery_settings.enable_online_payment
+    cart_data['delivery_settings'] = delivery_settings
     
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
@@ -315,6 +319,9 @@ def checkout(request):
         order_type = request.POST.get('order_type', 'pickup')
         payment_method = request.POST.get('payment_method', 'cod')
         
+        if payment_method == 'online' and not delivery_settings.enable_online_payment:
+            payment_method = 'cod'
+
         # Delivery fields
         address_text = request.POST.get('address_text', '').strip()
         landmark = request.POST.get('landmark', '').strip()
@@ -410,14 +417,14 @@ def checkout(request):
                         longitude=lng
                     )
                     
-                # 3. Calculate delivery fee & distance
+                # 3. Calculate delivery fee & distance using DeliverySettings
                 delivery_fee = 0.0
                 distance_km = None
                 if order_type == 'delivery' and address and address.latitude is not None and address.longitude is not None:
                     shop = Shop.objects.first()
                     if shop and shop.latitude is not None and shop.longitude is not None:
                         distance_km = calculate_distance(shop.latitude, shop.longitude, address.latitude, address.longitude)
-                        delivery_fee = round(distance_km * 10, 2)
+                        delivery_fee = round(float(delivery_settings.base_delivery_fee) + (distance_km * float(delivery_settings.cost_per_km)), 2)
                         
                 order_total = float(cart_data['cart_total']) + delivery_fee
 
@@ -927,6 +934,10 @@ def customer_login(request):
         request.session['login_otp'] = otp
         request.session['login_phone'] = phone_number
         
+        # Save OTP log to DB for Admin Support Desk
+        from shop.models import CustomerOtpLog
+        CustomerOtpLog.objects.create(phone_number=phone_number, otp_code=otp)
+
         # Send SMS / Email OTP
         send_sms_otp(phone_number, otp)
         
@@ -955,6 +966,10 @@ def verify_otp(request):
             customer, created = Customer.objects.get_or_create(phone_number=phone_number)
             request.session['customer_id'] = customer.id
             
+            # Mark OTP log as verified
+            from shop.models import CustomerOtpLog
+            CustomerOtpLog.objects.filter(phone_number=phone_number, otp_code=user_otp).update(is_verified=True)
+
             # Clean session variables
             del request.session['login_otp']
             del request.session['login_phone']
@@ -2079,3 +2094,35 @@ def admin_send_test_email_report(request):
                 return HttpResponse(f'<div style="padding: 0.8rem; background-color: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Error sending email: {err_msg}</div>', status=200)
     except Exception as e:
         return HttpResponse(f'<div style="padding: 0.8rem; background-color: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Error sending email: {str(e)}</div>', status=200)
+
+@staff_member_required
+@require_POST
+def admin_update_delivery_settings(request):
+    from shop.models import DeliverySettings
+    from decimal import Decimal
+    
+    settings_obj, _ = DeliverySettings.objects.get_or_create(id=1)
+    
+    cost_per_km = request.POST.get('cost_per_km')
+    base_fee = request.POST.get('base_delivery_fee')
+    enable_online = request.POST.get('enable_online_payment') in ['on', 'true', '1']
+    
+    if cost_per_km:
+        try:
+            settings_obj.cost_per_km = Decimal(cost_per_km)
+        except Exception:
+            pass
+            
+    if base_fee:
+        try:
+            settings_obj.base_delivery_fee = Decimal(base_fee)
+        except Exception:
+            pass
+            
+    settings_obj.enable_online_payment = enable_online
+    settings_obj.save()
+    
+    if getattr(request, 'htmx', False) or request.headers.get('HX-Request'):
+        return HttpResponse('<div style="padding: 0.8rem; background-color: #def7ec; border: 1px solid #84e1bc; color: #03543f; border-radius: 8px; font-weight: 600; margin-top: 0.5rem; font-size: 0.85rem;"><i class="fa-solid fa-circle-check"></i> Delivery & Payment Settings Saved Successfully!</div>')
+        
+    return redirect('admin_dashboard')

@@ -32,6 +32,7 @@ urlpatterns = [
     path('admin-dashboard/generate-report/', views.admin_generate_report, name='admin_generate_report'),
     path('admin-dashboard/update-smtp-config/', views.admin_update_smtp_config, name='admin_update_smtp_config'),
     path('admin-dashboard/send-test-email/', views.admin_send_test_email_report, name='admin_send_test_email_report'),
+    path('admin-dashboard/update-delivery-settings/', views.admin_update_delivery_settings, name='admin_update_delivery_settings'),
     path('login/', views.customer_login, name='customer_login'),
     path('verify-otp/', views.verify_otp, name='verify_otp'),
     path('logout/', views.customer_logout, name='customer_logout'),

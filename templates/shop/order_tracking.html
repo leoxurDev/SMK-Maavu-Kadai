@@ -160,11 +160,11 @@
                             </tr>
                             <tr style="background-color: var(--rice-white); font-size: 0.85rem; color: var(--text-secondary);">
                                 <td colspan="2" style="padding: 0.5rem 1rem;">
-                                    <span x-show="lang === 'en' || lang === 'both'">Delivery Fee (₹10/km)</span>
+                                    <span x-show="lang === 'en' || lang === 'both'">Delivery Fee</span>
                                     <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">டெலிவரி கட்டணம்</span>
-                                    {% if order.distance_km %}<span style="font-size: 0.75rem;">({{ order.distance_km }} km)</span>{% endif %}
+                                    {% if order.distance_km %}<span style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary);">({{ order.distance_km }} km)</span>{% endif %}
                                 </td>
-                                <td style="padding: 0.5rem 1rem; text-align: right; color: var(--success-color);">₹{{ order.delivery_fee|floatformat:2 }}</td>
+                                <td style="padding: 0.5rem 1rem; text-align: right; color: var(--success-color); font-weight: 700;">₹{{ order.delivery_fee|floatformat:2 }}</td>
                             </tr>
                         {% endif %}
                         <tr style="background-color: var(--rice-white); font-weight: 800; font-size: 0.95rem; border-top: 1px solid var(--border-color);">

@@ -293,6 +293,14 @@
                 @click="currentTab = 'inventory'">
                 <i class="fa-solid fa-boxes-stacked"></i> Inventory Management
             </button>
+            <button class="dash-tab-btn" :class="currentTab === 'otp_support' ? 'active' : ''"
+                @click="currentTab = 'otp_support'">
+                <i class="fa-solid fa-key"></i> Customer OTP Desk
+            </button>
+            <button class="dash-tab-btn" :class="currentTab === 'delivery_rates' ? 'active' : ''"
+                @click="currentTab = 'delivery_rates'">
+                <i class="fa-solid fa-truck"></i> Rates & Payment Mode
+            </button>
             <button class="dash-tab-btn" :class="currentTab === 'reports' ? 'active' : ''" @click="currentTab = 'reports'">
                 <i class="fa-solid fa-file-pdf"></i> Reports & SMTP Mail
             </button>
@@ -917,6 +925,138 @@
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+
+        <!-- TAB 7: CUSTOMER OTP SUPPORT DESK -->
+        <div x-show="currentTab === 'otp_support'" x-transition:enter.opacity.duration.200ms>
+            <div style="background-color: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); padding: 1.5rem; margin-bottom: 2rem; box-shadow: var(--shadow-sm);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0;">
+                            <i class="fa-solid fa-key" style="color: var(--accent-color);"></i> Customer OTP Support Desk
+                        </h3>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0 0 0;">
+                            View active customer login OTP codes to assist customers who call the shop.
+                        </p>
+                    </div>
+                    <button type="button" onclick="window.location.reload();" class="btn-primary" style="height: 32px; font-size: 0.75rem; padding: 0 0.8rem; border-radius: 6px;">
+                        <i class="fa-solid fa-rotate"></i> Refresh OTP Logs
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="report-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background-color: var(--input-bg); border-bottom: 2px solid var(--border-color);">
+                                <th style="padding: 0.8rem; text-align: left;">Customer Mobile</th>
+                                <th style="padding: 0.8rem; text-align: center;">4-Digit OTP Code</th>
+                                <th style="padding: 0.8rem; text-align: center;">Requested Time</th>
+                                <th style="padding: 0.8rem; text-align: center;">Status</th>
+                                <th style="padding: 0.8rem; text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in otp_logs %}
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 0.8rem; font-weight: 700; color: var(--text-primary);">
+                                    <i class="fa-solid fa-mobile-screen-button" style="color: var(--accent-color); margin-right: 0.4rem;"></i>
+                                    +91 {{ log.phone_number }}
+                                </td>
+                                <td style="padding: 0.8rem; text-align: center;">
+                                    <span style="font-family: monospace; font-size: 1.2rem; font-weight: 800; letter-spacing: 4px; color: #15803d; background-color: #f0fdf4; border: 1.5px solid #bbf7d0; padding: 0.25rem 0.75rem; border-radius: 8px; display: inline-block;">
+                                        {{ log.otp_code }}
+                                    </span>
+                                </td>
+                                <td style="padding: 0.8rem; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">
+                                    {{ log.created_at|date:"d M Y, h:i A" }}
+                                </td>
+                                <td style="padding: 0.8rem; text-align: center;">
+                                    {% if log.is_verified %}
+                                        <span style="background-color: #def7ec; color: #03543f; border: 1px solid #84e1bc; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700;">
+                                            <i class="fa-solid fa-circle-check"></i> Verified
+                                        </span>
+                                    {% else %}
+                                        <span style="background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700;">
+                                            <i class="fa-solid fa-clock"></i> Active / Pending
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 0.8rem; text-align: center;">
+                                    <button type="button" onclick="navigator.clipboard.writeText('{{ log.otp_code }}'); alert('OTP {{ log.otp_code }} copied to clipboard!');" style="background: none; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.75rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+                                        <i class="fa-regular fa-copy"></i> Copy OTP
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                                    <i class="fa-solid fa-shield-cat" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                                    No customer OTP requests generated yet.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 8: DELIVERY RATES & PAYMENT CONTROLS -->
+        <div x-show="currentTab === 'delivery_rates'" x-transition:enter.opacity.duration.200ms>
+            <div style="background-color: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); padding: 1.5rem; margin-bottom: 2rem; box-shadow: var(--shadow-sm);">
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.3rem;">
+                    <i class="fa-solid fa-truck" style="color: var(--accent-color);"></i> Delivery Rates & Online Payment Controls
+                </h3>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Configure delivery charges per kilometer, base fees, and toggle online payment availability for customers.
+                </p>
+
+                <form hx-post="{% url 'admin_update_delivery_settings' %}" hx-target="#delivery-settings-feedback">
+                    {% csrf_token %}
+                    <div id="delivery-settings-feedback"></div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
+                                Base Delivery Fee (₹) *
+                            </label>
+                            <input type="number" step="0.50" name="base_delivery_fee" value="{{ delivery_settings.base_delivery_fee|default:'20.00' }}" required
+                                   style="width: 100%; height: 40px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 0.8rem; font-size: 0.9rem; background-color: var(--input-bg);">
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Fixed base charge added to every delivery.</span>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
+                                Delivery Rate per Km (₹/km) *
+                            </label>
+                            <input type="number" step="0.50" name="cost_per_km" value="{{ delivery_settings.cost_per_km|default:'15.00' }}" required
+                                   style="width: 100%; height: 40px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 0.8rem; font-size: 0.9rem; background-color: var(--input-bg);">
+                            <span style="font-size: 0.7rem; color: var(--text-secondary);">Calculated automatically based on distance.</span>
+                        </div>
+                    </div>
+
+                    <!-- Online Payment Toggle -->
+                    <div style="background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">
+                                <i class="fa-solid fa-credit-card" style="color: var(--accent-color); margin-right: 0.3rem;"></i> Online Payment Mode (Razorpay / UPI)
+                            </h4>
+                            <p style="margin: 0.2rem 0 0 0; font-size: 0.75rem; color: var(--text-secondary);">
+                                Enable or disable online UPI/Card payments during customer checkout.
+                            </p>
+                        </div>
+
+                        <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
+                            <input type="checkbox" name="enable_online_payment" {% if delivery_settings.enable_online_payment %}checked{% endif %} style="width: 20px; height: 20px; accent-color: var(--banana-leaf);">
+                            <span>{% if delivery_settings.enable_online_payment %}ONLINE PAYMENT ENABLED{% else %}ONLINE PAYMENT DISABLED{% endif %}</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="height: 42px; padding: 0 1.5rem; border-radius: 8px; font-size: 0.85rem; background-color: var(--accent-color);">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Delivery & Payment Settings
+                    </button>
+                </form>
             </div>
         </div>
 

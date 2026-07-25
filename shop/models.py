@@ -298,5 +298,25 @@ class SmtpConfig(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"SMTP Configuration ({self.smtp_user or 'Default'})"
+        return f"SMTP Config ({self.smtp_host}:{self.smtp_port})"
 
+class CustomerOtpLog(models.Model):
+    phone_number = models.CharField(max_length=15)
+    otp_code = models.CharField(max_length=10)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"OTP {self.otp_code} for {self.phone_number} ({'Verified' if self.is_verified else 'Pending'})"
+
+class DeliverySettings(models.Model):
+    cost_per_km = models.DecimalField("Delivery Rate (₹ per km)", max_digits=6, decimal_places=2, default=15.00)
+    base_delivery_fee = models.DecimalField("Base Delivery Fee (₹)", max_digits=6, decimal_places=2, default=20.00)
+    enable_online_payment = models.BooleanField("Enable Online Payment (UPI / Razorpay)", default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Delivery Settings (₹{self.cost_per_km}/km, Base: ₹{self.base_delivery_fee}, Online Payment: {self.enable_online_payment})"
