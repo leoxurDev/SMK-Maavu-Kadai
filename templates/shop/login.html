@@ -51,58 +51,6 @@
                     <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">OTP குறியீடு அனுப்பு</span>
                 </button>
             </form>
-
-            <!-- OR Divider -->
-            <div style="display: flex; align-items: center; margin: 1.5rem 0 1rem 0; color: var(--text-secondary); font-size: 0.75rem; font-weight: 700;">
-                <div style="flex: 1; height: 1px; background-color: var(--border-color);"></div>
-                <span style="padding: 0 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">OR</span>
-                <div style="flex: 1; height: 1px; background-color: var(--border-color);"></div>
-            </div>
-
-            <!-- Google Sign-In Integration -->
-            <script src="https://accounts.google.com/gsi/client" async defer></script>
-            <script>
-                function handleGoogleCredentialResponse(response) {
-                    fetch('{% url "google_login" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: 'credential=' + encodeURIComponent(response.credential)
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            window.location.href = data.redirect_url || '/catalog/';
-                        } else {
-                            alert(data.message || 'Google Login failed. Please try again.');
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Google Sign-In Error:', err);
-                        alert('Google Sign-In failed. Please try again.');
-                    });
-                }
-            </script>
-
-            <div id="g_id_onload"
-                 data-client_id="{{ google_client_id|default:'' }}"
-                 data-callback="handleGoogleCredentialResponse"
-                 data-auto_prompt="false">
-            </div>
-
-            <div style="display: flex; justify-content: center; margin-bottom: 0.5rem;">
-                <div class="g_id_signin" 
-                     data-type="standard" 
-                     data-shape="rectangular" 
-                     data-theme="outline" 
-                     data-text="signin_with" 
-                     data-size="large" 
-                     data-logo_alignment="left"
-                     data-width="350">
-                </div>
-            </div>
         {% else %}
             <!-- STEP 2: OTP Verification entry -->
             

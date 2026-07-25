@@ -187,13 +187,12 @@ def normalize_to_base(value, unit):
     return Decimal(value)
 
 class Customer(models.Model):
-    phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True)
-    email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
+    phone_number = models.CharField(max_length=15, unique=True)
     name = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.name or self.email or self.phone_number or f"Customer #{self.id}"
+        return self.name or self.phone_number
 
 class Address(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='addresses')

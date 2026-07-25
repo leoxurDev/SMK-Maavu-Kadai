@@ -912,7 +912,6 @@ def send_sms_otp(phone_number, otp):
 import random
 
 def customer_login(request):
-    google_client_id = os.getenv('GOOGLE_CLIENT_ID', '')
     if request.method == 'POST':
         raw_phone = request.POST.get('phone_number', '').strip()
         import re
@@ -922,10 +921,7 @@ def customer_login(request):
             
         # Strict Indian Mobile Number Validation: 10 digits starting with 6, 7, 8, 9
         if not phone_number or not re.match(r'^[6-9]\d{9}$', phone_number):
-            return render(request, 'shop/login.html', {
-                'error': 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.',
-                'google_client_id': google_client_id
-            })
+            return render(request, 'shop/login.html', {'error': 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.'})
         
         otp = str(random.randint(1000, 9999))
         request.session['login_otp'] = otp
@@ -941,11 +937,10 @@ def customer_login(request):
         
         return render(request, 'shop/login.html', {
             'phone_number': phone_number,
-            'otp_sent': True,
-            'google_client_id': google_client_id
+            'otp_sent': True
         })
         
-    return render(request, 'shop/login.html', {'google_client_id': google_client_id})
+    return render(request, 'shop/login.html')
 
 def verify_otp(request):
     if request.method == 'POST':
@@ -2084,48 +2079,3 @@ def admin_send_test_email_report(request):
                 return HttpResponse(f'<div style="padding: 0.8rem; background-color: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Error sending email: {err_msg}</div>', status=200)
     except Exception as e:
         return HttpResponse(f'<div style="padding: 0.8rem; background-color: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Error sending email: {str(e)}</div>', status=200)
-
-from django.views.decorators.csrf import csrf_exempt
-
-@csrf_exempt
-def google_login(request):
-    if request.method == 'POST':
-        credential = request.POST.get('credential') or request.POST.get('id_token')
-        if not credential and request.body:
-            try:
-                data = json.loads(request.body.decode('utf-8'))
-                credential = data.get('credential')
-            except Exception:
-                pass
-
-        if not credential:
-            return JsonResponse({'status': 'error', 'message': 'Missing Google credential token'}, status=400)
-
-        # Verify Google JWT token using Google OAuth2 TokenInfo API
-        try:
-            token_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
-            req = urllib.request.Request(token_url, method='GET')
-            with urllib.request.urlopen(req, timeout=10) as response:
-                payload = json.loads(response.read().decode('utf-8'))
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': f'Invalid Google token: {str(e)}'}, status=400)
-
-        email = payload.get('email')
-        name = payload.get('name') or payload.get('given_name') or 'Google User'
-        email_verified = payload.get('email_verified')
-
-        if not email or str(email_verified).lower() not in ['true', '1']:
-            return JsonResponse({'status': 'error', 'message': 'Email address not verified by Google'}, status=400)
-
-        # Create or retrieve Customer record
-        customer, created = Customer.objects.get_or_create(email=email, defaults={'name': name})
-        if not created and not customer.name:
-            customer.name = name
-            customer.save(update_fields=['name'])
-
-        # Log customer into Django session
-        request.session['customer_id'] = customer.id
-
-        return JsonResponse({'status': 'success', 'redirect_url': '/catalog/'})
-
-    return redirect('customer_login')
