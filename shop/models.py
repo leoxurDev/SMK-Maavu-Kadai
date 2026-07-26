@@ -68,16 +68,13 @@ class Product(models.Model):
 
     @property
     def image_src(self):
-        if self.image and hasattr(self.image, 'name') and self.image.name:
-            import os
-            try:
-                if hasattr(self.image, 'path') and os.path.exists(self.image.path):
-                    return self.image.url
-            except Exception:
-                pass
-            return f"/media/{self.image.name}"
-        if self.image_url:
+        if getattr(self, 'image_url', None):
             return self.image_url
+        if self.image and hasattr(self.image, 'name') and self.image.name:
+            name = str(self.image.name)
+            if not name.startswith('/'):
+                return f"/media/{name}"
+            return name
         return '/static/images/default_product.jpg'
     is_active = models.BooleanField(default=True)
     INVENTORY_CHOICES = [
