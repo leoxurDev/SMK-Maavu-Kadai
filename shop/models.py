@@ -75,7 +75,7 @@ class Product(models.Model):
             if not name.startswith('/'):
                 return f"/media/{name}"
             return name
-        return '/static/images/default_product.jpg'
+        return None
     is_active = models.BooleanField(default=True)
     INVENTORY_CHOICES = [
         ('packaged', 'Packaged Units (by Packets/Slabs)'),

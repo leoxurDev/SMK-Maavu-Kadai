@@ -140,12 +140,17 @@
                             }">
                                 <div class="product-img-container">
                                     {% if product.image_src %}
-                                        <img src="{{ product.image_src }}" alt="{{ product.name_en }}" class="product-img" onerror="this.onerror=null; this.src='/static/images/default_product.jpg';">
+                                        <img src="{{ product.image_src }}" alt="{{ product.name_en }}" class="product-img" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                        <div class="product-placeholder" style="display: none;">
+                                            <i class="fa-solid fa-bowl-rice"></i>
+                                            <span x-show="lang === 'en' || lang === 'both'">{{ product.name_en }}</span>
+                                            <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.7rem;">{{ product.name_ta }}</span>
+                                        </div>
                                     {% else %}
                                         <div class="product-placeholder">
                                             <i class="fa-solid fa-bowl-rice"></i>
-                                            <span x-show="lang === 'en' || lang === 'both'">No Image</span>
-                                            <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.7rem;">படம் இல்லை</span>
+                                            <span x-show="lang === 'en' || lang === 'both'">{{ product.name_en }}</span>
+                                            <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.7rem;">{{ product.name_ta }}</span>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -284,12 +289,17 @@
                         }">
                             <div class="product-img-container">
                                 {% if product.image_src %}
-                                    <img src="{{ product.image_src }}" alt="{{ product.name_en }}" class="product-img" onerror="this.onerror=null; this.src='/static/images/default_product.jpg';">
+                                    <img src="{{ product.image_src }}" alt="{{ product.name_en }}" class="product-img" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                    <div class="product-placeholder" style="display: none;">
+                                        <i class="fa-solid fa-bowl-rice"></i>
+                                        <span x-show="lang === 'en' || lang === 'both'">{{ product.name_en }}</span>
+                                        <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.7rem;">{{ product.name_ta }}</span>
+                                    </div>
                                 {% else %}
                                     <div class="product-placeholder">
                                         <i class="fa-solid fa-bowl-rice"></i>
-                                        <span x-show="lang === 'en' || lang === 'both'">No Image</span>
-                                        <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.7rem;">படம் இல்லை</span>
+                                        <span x-show="lang === 'en' || lang === 'both'">{{ product.name_en }}</span>
+                                        <span x-show="lang === 'ta'" class="tamil-text" style="font-size: 0.7rem;">{{ product.name_ta }}</span>
                                     </div>
                                 {% endif %}
                             </div>
