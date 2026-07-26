@@ -1520,6 +1520,12 @@ def admin_update_inventory(request):
         if bulk_unit in ['kg', 'g', 'l', 'ml', 'piece']:
             product.bulk_unit = bulk_unit
         product.save()
+    elif target_type == 'image_url':
+        product_id = request.POST.get('product_id')
+        product = get_object_or_404(Product, id=product_id)
+        url_val = request.POST.get(f'image_url_{product_id}', '').strip()
+        product.image_url = url_val if url_val else None
+        product.save(update_fields=['image_url'])
         
     if getattr(request, 'htmx', False) or request.headers.get('HX-Request'):
         response = HttpResponse("")

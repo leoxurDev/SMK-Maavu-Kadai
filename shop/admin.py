@@ -31,9 +31,10 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name_en', 'name_ta', 'category', 'is_active', 'price_slabs_summary')
+    list_display = ('name_en', 'name_ta', 'category', 'image_url', 'is_active', 'price_slabs_summary')
     list_filter = ('category', 'is_active')
-    search_fields = ('name_en', 'name_ta', 'description_en', 'description_ta')
+    search_fields = ('name_en', 'name_ta', 'description_en', 'description_ta', 'image_url')
+    fields = ('category', 'name_en', 'name_ta', 'description_en', 'description_ta', 'image', 'image_url', 'inventory_type', 'bulk_stock', 'bulk_unit', 'is_active')
     inlines = [PriceSlabInline]
     ordering = ('category', 'name_en')
 
