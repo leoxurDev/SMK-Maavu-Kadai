@@ -949,8 +949,10 @@ def customer_login(request):
         from shop.models import CustomerOtpLog
         CustomerOtpLog.objects.create(phone_number=phone_number, otp_code=otp)
 
-        # Send SMS / Email OTP
-        send_sms_otp(phone_number, otp)
+        # Send SMS / Email OTP asynchronously in background thread for instant response
+        import threading
+        t = threading.Thread(target=send_sms_otp, args=(phone_number, otp), daemon=True)
+        t.start()
         
         # Log OTP securely to server logs
         print("\n" + "="*50)
@@ -971,7 +973,8 @@ def customer_login(request):
             'otp': otp,
             'whatsapp_config': whatsapp_config,
             'whatsapp_message': formatted_message,
-            'whatsapp_url': whatsapp_url
+            'whatsapp_url': whatsapp_url,
+            'auto_open_whatsapp': True
         })
         
     from shop.models import WhatsAppConfig
