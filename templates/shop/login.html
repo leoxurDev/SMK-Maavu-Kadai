@@ -54,11 +54,32 @@
         {% else %}
             <!-- STEP 2: OTP Verification entry -->
             
-            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 0.8rem; margin-bottom: 1.2rem; text-align: center; font-size: 0.8rem; color: #166534; font-weight: 600;">
-                <i class="fa-solid fa-shield-halved" style="color: var(--banana-leaf);"></i>
-                <span x-show="lang === 'en' || lang === 'both'">Verification code sent to <strong>+91 {{ phone_number }}</strong></span>
-                <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text"><strong>+91 {{ phone_number }}</strong> எண்ணிற்கு OTP அனுப்பப்பட்டது</span>
+            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; text-align: center;">
+                <div style="font-size: 0.85rem; color: #166534; font-weight: 700; margin-bottom: 0.6rem;">
+                    <i class="fa-solid fa-shield-halved" style="color: #25D366; margin-right: 0.3rem;"></i>
+                    <span x-show="lang === 'en' || lang === 'both'">Verification code generated for <strong>+91 {{ phone_number }}</strong></span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text"><strong>+91 {{ phone_number }}</strong> எண்ணிற்கு OTP உருவாக்கப்பட்டது</span>
+                </div>
+
+                {% if whatsapp_url %}
+                <a href="{{ whatsapp_url }}" id="whatsapp-otp-link" target="_blank"
+                   style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; width: 100%; height: 44px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">
+                    <i class="fa-brands fa-whatsapp" style="font-size: 1.4rem;"></i>
+                    <span x-show="lang === 'en' || lang === 'both'">📲 Click to Receive OTP on WhatsApp</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">📲 WhatsApp மூலம் OTP பெற கிளிக் செய்யவும்</span>
+                </a>
+                {% endif %}
             </div>
+
+            {% if auto_open_whatsapp and whatsapp_url %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    try {
+                        window.location.href = "{{ whatsapp_url|escapejs }}";
+                    } catch(e) {}
+                });
+            </script>
+            {% endif %}
 
             <form method="POST" action="{% url 'verify_otp' %}" style="display: flex; flex-direction: column; gap: 1.2rem;">
                 {% csrf_token %}
@@ -84,12 +105,6 @@
                     <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text" :style="lang === 'both' ? 'font-size: 0.8rem; margin-left: 2px;' : ''">சரிபார்த்து உள்நுழை</span>
                 </button>
             </form>
-
-            {% if auto_open_whatsapp and whatsapp_url %}
-            <script>
-                window.open("{{ whatsapp_url|escapejs }}", "_blank");
-            </script>
-            {% endif %}
 
             <!-- 60-Second Resend OTP Timer & Cooldown -->
             <div x-data="{ countdown: 60, canResend: false }" x-init="
