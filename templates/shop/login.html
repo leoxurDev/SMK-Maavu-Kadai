@@ -85,6 +85,17 @@
                 </button>
             </form>
 
+            <!-- WhatsApp OTP Direct Button -->
+            <div style="margin-top: 0.8rem;">
+                <a href="https://wa.me/91{{ shop_whatsapp }}?text=Hello%20SMK%20Maavu%20Kadai,%20please%20send%20login%20OTP%20code%20for%20mobile%20number%2091{{ phone_number }}" 
+                   target="_blank" 
+                   style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; width: 100%; height: 42px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 6px rgba(37, 211, 102, 0.25);">
+                    <i class="fa-brands fa-whatsapp" style="font-size: 1.3rem;"></i>
+                    <span x-show="lang === 'en' || lang === 'both'">Get OTP on WhatsApp</span>
+                    <span x-show="lang === 'ta' || lang === 'both'" class="tamil-text">WhatsApp மூலம் OTP பெற</span>
+                </a>
+            </div>
+
             <!-- 60-Second Resend OTP Timer & Cooldown -->
             <div x-data="{ countdown: 60, canResend: false }" x-init="
                 const timer = setInterval(() => {

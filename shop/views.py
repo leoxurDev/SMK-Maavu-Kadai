@@ -955,12 +955,23 @@ def customer_login(request):
         print(f"[OTP SERVICE] Verification code for {phone_number} is: {otp}")
         print("="*50 + "\n")
         
+        shop = Shop.objects.first()
+        shop_whatsapp = shop.contact_number if shop and shop.contact_number else '9876543210'
+        import re
+        shop_whatsapp = re.sub(r'\D', '', shop_whatsapp)[-10:]
+
         return render(request, 'shop/login.html', {
             'phone_number': phone_number,
-            'otp_sent': True
+            'otp_sent': True,
+            'otp': otp,
+            'shop_whatsapp': shop_whatsapp
         })
         
-    return render(request, 'shop/login.html')
+    shop = Shop.objects.first()
+    shop_whatsapp = shop.contact_number if shop and shop.contact_number else '9876543210'
+    import re
+    shop_whatsapp = re.sub(r'\D', '', shop_whatsapp)[-10:]
+    return render(request, 'shop/login.html', {'shop_whatsapp': shop_whatsapp})
 
 def verify_otp(request):
     if request.method == 'POST':

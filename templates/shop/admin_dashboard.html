@@ -992,10 +992,15 @@
                                         </span>
                                     {% endif %}
                                 </td>
-                                <td style="padding: 0.8rem; text-align: center;">
+                                <td style="padding: 0.8rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
                                     <button type="button" onclick="navigator.clipboard.writeText('{{ log.otp_code }}'); alert('OTP {{ log.otp_code }} copied to clipboard!');" style="background: none; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.75rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
-                                        <i class="fa-regular fa-copy"></i> Copy OTP
+                                        <i class="fa-regular fa-copy"></i> Copy
                                     </button>
+                                    <a href="https://wa.me/91{{ log.phone_number }}?text=🌾%20வணக்கம்!%20SMK%20மாவு%20கடை%20(SMK%20Flour%20Shop)%20உள்நுழைவுக்கான%20உங்கள்%20OTP%20எண்:%20{{ log.otp_code }}." 
+                                       target="_blank" 
+                                       style="background-color: #25D366; color: white; border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.75rem; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                        <i class="fa-brands fa-whatsapp"></i> Send WhatsApp
+                                    </a>
                                 </td>
                             </tr>
                             {% empty %}
