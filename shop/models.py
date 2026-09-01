@@ -339,3 +339,29 @@ class DeliverySettings(models.Model):
 
     def __str__(self):
         return f"Delivery Settings (₹{self.cost_per_km}/km, Base: ₹{self.base_delivery_fee}, Online Payment: {self.enable_online_payment})"
+
+class WhatsAppConfig(models.Model):
+    whatsapp_number = models.CharField("Store WhatsApp Phone Number", max_length=20, default="7397536217")
+    otp_message_template = models.TextField(
+        "WhatsApp OTP Message Template",
+        default="🌾 வணக்கம்! SMK மாவு கடை (SMK Flour Shop) உள்நுழைவுக்கான உங்கள் OTP எண்: {otp}. இந்த எண்ணை யாருடனும் பகிர வேண்டாம்."
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def get_config(cls):
+        obj = cls.objects.first()
+        if not obj:
+            obj = cls.objects.create(
+                whatsapp_number="7397536217",
+                otp_message_template="🌾 வணக்கம்! SMK மாவு கடை (SMK Flour Shop) உள்நுழைவுக்கான உங்கள் OTP எண்: {otp}. இந்த எண்ணை யாருடனும் பகிர வேண்டாம்."
+            )
+        return obj
+
+    def get_formatted_message(self, otp_code):
+        if '{otp}' in self.otp_message_template:
+            return self.otp_message_template.replace('{otp}', str(otp_code))
+        return f"{self.otp_message_template} OTP: {otp_code}"
+
+    def __str__(self):
+        return f"WhatsApp Config (+91 {self.whatsapp_number})"

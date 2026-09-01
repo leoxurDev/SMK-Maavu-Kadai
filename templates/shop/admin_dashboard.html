@@ -301,6 +301,10 @@
                 @click="currentTab = 'delivery_rates'">
                 <i class="fa-solid fa-truck"></i> Rates & Payment Mode
             </button>
+            <button class="dash-tab-btn" :class="currentTab === 'whatsapp_config' ? 'active' : ''"
+                @click="currentTab = 'whatsapp_config'">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp Config
+            </button>
             <button class="dash-tab-btn" :class="currentTab === 'reports' ? 'active' : ''" @click="currentTab = 'reports'">
                 <i class="fa-solid fa-file-pdf"></i> Reports & SMTP Mail
             </button>
@@ -1070,6 +1074,50 @@
 
                     <button type="submit" class="btn-primary" style="height: 42px; padding: 0 1.5rem; border-radius: 8px; font-size: 0.85rem; background-color: var(--accent-color);">
                         <i class="fa-solid fa-floppy-disk"></i> Save Delivery & Payment Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TAB 9: WHATSAPP GATEWAY SETTINGS -->
+        <div x-show="currentTab === 'whatsapp_config'" x-transition:enter.opacity.duration.200ms>
+            <div style="background-color: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); padding: 1.5rem; margin-bottom: 2rem; box-shadow: var(--shadow-sm);">
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.3rem;">
+                    <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> WhatsApp OTP Gateway & Message Configuration
+                </h3>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Configure your business WhatsApp phone number and custom branded OTP message template for customer login.
+                </p>
+
+                <form hx-post="{% url 'admin_update_whatsapp_config' %}" hx-target="#whatsapp-settings-feedback">
+                    {% csrf_token %}
+                    <div id="whatsapp-settings-feedback"></div>
+
+                    <div style="margin-bottom: 1.2rem;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
+                            Business WhatsApp Mobile Number *
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-secondary); background-color: var(--input-bg); border: 1px solid var(--border-color); padding: 0 0.8rem; height: 40px; border-radius: 8px; display: flex; align-items: center;">+91</span>
+                            <input type="text" name="whatsapp_number" value="{{ whatsapp_config.whatsapp_number }}" required
+                                   style="width: 100%; height: 40px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0 0.8rem; font-size: 0.9rem; background-color: var(--input-bg);">
+                        </div>
+                        <span style="font-size: 0.7rem; color: var(--text-secondary);">The 10-digit WhatsApp number used to send/receive customer login OTP messages.</span>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
+                            Custom WhatsApp OTP Message Template *
+                        </label>
+                        <textarea name="otp_message_template" rows="4" required
+                                  style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.8rem; font-size: 0.85rem; background-color: var(--input-bg); font-family: inherit;">{{ whatsapp_config.otp_message_template }}</textarea>
+                        <span style="font-size: 0.72rem; color: var(--accent-color); font-weight: 600; display: block; margin-top: 0.3rem;">
+                            💡 Tip: Include <code>{otp}</code> in your text message. It will be automatically replaced with the customer's 4-digit code.
+                        </span>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="height: 42px; padding: 0 1.5rem; border-radius: 8px; font-size: 0.85rem; background-color: #25D366; color: white;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save WhatsApp Gateway Settings
                     </button>
                 </form>
             </div>

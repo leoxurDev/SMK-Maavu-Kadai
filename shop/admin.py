@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Shop, Category, Product, PriceSlab, Customer, Address, Order, OrderItem, Payment, SmtpConfig, CustomerOtpLog, DeliverySettings
+from .models import Shop, Category, Product, PriceSlab, Customer, Address, Order, OrderItem, Payment, SmtpConfig, CustomerOtpLog, DeliverySettings, WhatsAppConfig
 
 class PriceSlabInline(admin.TabularInline):
     model = PriceSlab
@@ -96,4 +96,9 @@ class DeliverySettingsAdmin(admin.ModelAdmin):
 @admin.register(SmtpConfig)
 class SmtpConfigAdmin(admin.ModelAdmin):
     list_display = ('smtp_host', 'smtp_port', 'smtp_user', 'recipient_email', 'auto_daily_email', 'updated_at')
+    readonly_fields = ('updated_at',)
+
+@admin.register(WhatsAppConfig)
+class WhatsAppConfigAdmin(admin.ModelAdmin):
+    list_display = ('whatsapp_number', 'otp_message_template', 'updated_at')
     readonly_fields = ('updated_at',)

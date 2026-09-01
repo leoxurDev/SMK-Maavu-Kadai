@@ -726,7 +726,7 @@ def admin_dashboard(request):
     all_products = Product.objects.all().prefetch_related('price_slabs').order_by('category__display_order', 'name_en')
     categories = Category.objects.all().order_by('display_order', 'name_en')
 
-    from shop.models import SmtpConfig, CustomerOtpLog, DeliverySettings
+    from shop.models import SmtpConfig, CustomerOtpLog, DeliverySettings, WhatsAppConfig
     try:
         smtp_config = SmtpConfig.objects.first()
     except Exception:
@@ -738,6 +738,7 @@ def admin_dashboard(request):
         otp_logs = []
         
     delivery_settings = DeliverySettings.get_settings()
+    whatsapp_config = WhatsAppConfig.get_config()
 
     context = {
         'today_sales': today_sales,
@@ -760,6 +761,7 @@ def admin_dashboard(request):
         'smtp_config': smtp_config,
         'otp_logs': otp_logs,
         'delivery_settings': delivery_settings,
+        'whatsapp_config': whatsapp_config,
     }
     
     return render(request, 'shop/admin_dashboard.html', context)
@@ -955,23 +957,26 @@ def customer_login(request):
         print(f"[OTP SERVICE] Verification code for {phone_number} is: {otp}")
         print("="*50 + "\n")
         
-        shop = Shop.objects.first()
-        shop_whatsapp = shop.contact_number if shop and shop.contact_number else '9876543210'
-        import re
-        shop_whatsapp = re.sub(r'\D', '', shop_whatsapp)[-10:]
+        from shop.models import WhatsAppConfig
+        whatsapp_config = WhatsAppConfig.get_config()
+        formatted_message = whatsapp_config.get_formatted_message(otp)
+
+        import urllib.parse
+        encoded_message = urllib.parse.quote(formatted_message)
+        whatsapp_url = f"https://wa.me/91{whatsapp_config.whatsapp_number}?text={encoded_message}"
 
         return render(request, 'shop/login.html', {
             'phone_number': phone_number,
             'otp_sent': True,
             'otp': otp,
-            'shop_whatsapp': shop_whatsapp
+            'whatsapp_config': whatsapp_config,
+            'whatsapp_message': formatted_message,
+            'whatsapp_url': whatsapp_url
         })
         
-    shop = Shop.objects.first()
-    shop_whatsapp = shop.contact_number if shop and shop.contact_number else '9876543210'
-    import re
-    shop_whatsapp = re.sub(r'\D', '', shop_whatsapp)[-10:]
-    return render(request, 'shop/login.html', {'shop_whatsapp': shop_whatsapp})
+    from shop.models import WhatsAppConfig
+    whatsapp_config = WhatsAppConfig.get_config()
+    return render(request, 'shop/login.html', {'whatsapp_config': whatsapp_config})
 
 def verify_otp(request):
     if request.method == 'POST':
@@ -2152,6 +2157,30 @@ def admin_update_delivery_settings(request):
     
     if getattr(request, 'htmx', False) or request.headers.get('HX-Request'):
         response = HttpResponse('<div style="padding: 0.8rem; background-color: #def7ec; border: 1px solid #84e1bc; color: #03543f; border-radius: 8px; font-weight: 600; margin-top: 0.5rem; font-size: 0.85rem;"><i class="fa-solid fa-circle-check"></i> Delivery & Payment Settings Saved Successfully!</div>')
+        response['HX-Refresh'] = 'true'
+        return response
+        
+    return redirect('admin_dashboard')
+
+@staff_member_required
+@require_POST
+def admin_update_whatsapp_config(request):
+    from shop.models import WhatsAppConfig
+    config_obj = WhatsAppConfig.get_config()
+    
+    number = request.POST.get('whatsapp_number', '').strip()
+    template = request.POST.get('otp_message_template', '').strip()
+    
+    if number:
+        import re
+        config_obj.whatsapp_number = re.sub(r'\D', '', number)[-10:]
+    if template:
+        config_obj.otp_message_template = template
+        
+    config_obj.save()
+    
+    if getattr(request, 'htmx', False) or request.headers.get('HX-Request'):
+        response = HttpResponse('<div style="padding: 0.8rem; background-color: #def7ec; border: 1px solid #84e1bc; color: #03543f; border-radius: 8px; font-weight: 600; margin-top: 0.5rem; font-size: 0.85rem;"><i class="fa-solid fa-circle-check"></i> WhatsApp Gateway Settings Saved Successfully!</div>')
         response['HX-Refresh'] = 'true'
         return response
         
